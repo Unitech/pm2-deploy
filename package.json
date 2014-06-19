@@ -1,0 +1,19 @@
+{
+  "name": "pm2-deploy",
+  "version": "0.0.1-beta",
+  "description": "Deployment system for PM2",
+  "main": "deploy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies" : {
+    "tv4" : "~1.0.18"
+  },
+  "devDependencies": {
+    "mocha": "^1.20.1",
+    "should": "^4.0.0",
+    "better-assert": "^1.0.0"
+  },
+  "author": "Alexandre Strzelewicz",
+  "license": "AGPLV3"
+}
