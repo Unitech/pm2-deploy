@@ -59,4 +59,6 @@ function deploy() {
 
 }
 
-deploy();
+if (require.main === module) {
+  deploy();
+}
