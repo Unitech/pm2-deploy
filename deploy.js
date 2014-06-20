@@ -28,7 +28,9 @@ Deploy.deployForEnv = function(deploy_conf, env, args, cb) {
     return cb(tv4.error);
   }
 
-  var shellSyntaxCommand = "echo '" + piped_data + "' | ./deploy " + args.join(' ');
+  console.log('--> Deploying in %s environment on host %s', env, target_conf.host);
+
+  var shellSyntaxCommand = "echo '" + piped_data + "' | " + __dirname + "/deploy " + args.join(' ');
   var proc = spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
 
   proc.on('error', function(e) {
