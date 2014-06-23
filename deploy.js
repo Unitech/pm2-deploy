@@ -23,7 +23,7 @@ Deploy.deployForEnv = function(deploy_conf, env, args, cb) {
   var piped_data  = JSON.stringify(target_conf);
 
   if (!tv4.validate(target_conf, {
-    "required": ["user", "host", "repo", "path"]
+    "required": ["user", "host", "repo", "path", "ref"]
   })) {
     return cb(tv4.error);
   }

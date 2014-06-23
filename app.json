@@ -11,13 +11,15 @@
   "deploy" : {
     "production" : {
       "user" : "node",
-      "host" :  "212.83.163.168",
+      "host" : "212.83.163.168",
+      "ref"  : "origin/master",
       "repo" : "git@github.com:Unitech/eip-vitrine.git",
       "path" : "/var/www/test-deploy"
     },
     "dev" : {
       "user" : "node",
-      "host" :  "212.83.163.168",
+      "host" : "212.83.163.168",
+      "ref"  : "origin/master",
       "repo" : "git@github.com:Unitech/eip-vitrine.git",
       "path" : "/var/www/test-dev"
     }
