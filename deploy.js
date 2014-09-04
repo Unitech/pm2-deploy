@@ -1,6 +1,6 @@
 
 var fs    = require('fs');
-var spawn = require('child_process').spawn;
+var childProcess = require('child_process');
 
 var tv4   = require('tv4');
 
@@ -28,10 +28,12 @@ Deploy.deployForEnv = function(deploy_conf, env, args, cb) {
     return cb(tv4.error);
   }
 
-  console.log('--> Deploying in %s environment on host %s', env, target_conf.host);
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('--> Deploying in %s environment on host %s', env, target_conf.host);
+  }
 
   var shellSyntaxCommand = "echo '" + piped_data + "' | " + __dirname + "/deploy " + args.join(' ');
-  var proc = spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
+  var proc = childProcess.spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
 
   proc.on('error', function(e) {
     return cb(e.stack || e);
