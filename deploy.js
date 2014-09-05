@@ -11,10 +11,6 @@ var childProcess = require('child_process');
  * @callback cb
  */
 function spawn(hostJSON, args, cb) {
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('--> Deploying on host %s', hostJSON.host);
-  }
-
   var shellSyntaxCommand = "echo '" + hostJSON + "' | " + __dirname + "/deploy " + args.join(' ');
   var proc = childProcess.spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
 
@@ -49,12 +45,17 @@ function deployForEnv(deploy_conf, env, args, cb) {
   }
 
   if (process.env.NODE_ENV !== 'test') {
-    console.log('--> Deploying in %s environment', env);
+    console.log('--> Deploying to %s environment', env);
   }
 
   if (Array.isArray(target_conf.host)) {
     async.series(target_conf.host.reduce(function(jobs, host) {
       jobs.push(function(done) {
+
+        if (process.env.NODE_ENV !== 'test') {
+          console.log('--> on host %s', host);
+        }
+
         var custom_data = JSON.stringify({
           host: host,
           ref: target_conf.ref,
@@ -68,6 +69,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
     }, []), cb);
   }
   else {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('--> on host %s', target_conf.host);
+    }
     spawn(piped_data, args, cb);
   }
 
