@@ -12,7 +12,7 @@ var childProcess = require('child_process');
  */
 function spawn(hostJSON, args, cb) {
   if (process.env.NODE_ENV !== 'test') {
-    console.log('--> Deploying in %s environment on host %s', env, target_conf.host);
+    console.log('--> Deploying in %s environment on host %s', env, hostJSON.host);
   }
 
   var shellSyntaxCommand = "echo '" + hostJSON + "' | " + __dirname + "/deploy " + args.join(' ');
@@ -68,7 +68,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
   }
 
   return false;
-};
+}
 
 function run() {
   var conf    = JSON.parse(fs.readFileSync('app.json'));
