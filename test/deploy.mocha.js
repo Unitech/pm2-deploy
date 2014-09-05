@@ -6,16 +6,20 @@ describe('deploy', function() {
   describe('deployForEnv', function() {
 
     var spawnCalls
-    var spawnProcs
+    var spawnNotifier
     beforeEach(function() {
       spawnCalls = []
-      spawnProcs = []
+      spawnNotifier = new EventEmitter()
     })
 
     childProcess.spawn = function(cmd, args, options) {
       spawnCalls.push(arguments)
       var proc = new EventEmitter()
-      spawnProcs.push(proc)
+
+      process.nextTick(function() {
+        spawnNotifier.emit('spawned', proc)
+      })
+
       return proc
     }
 
@@ -97,14 +101,19 @@ describe('deploy', function() {
       context('successfully', function() {
         it('invokes our callback with the supplied arguments', function(done) {
           var argsIn = [1,2,'three','four']
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('close', 0)
+          })
           deploy.deployForEnv(conf, 'staging', argsIn, function(err, argsOut) {
             argsOut.should.eql(argsIn)
             done()
           })
-          spawnProcs[0].emit('close', 0)
         })
 
         it('invokes sh -c', function(done) {
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('close', 0)
+          })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
             spawnCalls[0][0].should.equal('sh')
@@ -112,10 +121,12 @@ describe('deploy', function() {
             spawnCalls[0][1][0].should.equal('-c')
             done()
           })
-          spawnProcs[0].emit('close', 0)
         })
 
-        it('echoes a json blob', function(done) {
+        it('echoes a JSON blob', function(done) {
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('close', 0)
+          })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
             spawnCalls[0][1][1].should.be.a.String
@@ -131,10 +142,12 @@ describe('deploy', function() {
             echoData.should.eql(conf.staging)
             done()
           })
-          spawnProcs[0].emit('close', 0)
         })
 
         it('pipes to deploy', function(done) {
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('close', 0)
+          })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
             spawnCalls[0][1][1].should.be.a.String
@@ -143,29 +156,119 @@ describe('deploy', function() {
             pipeTo.should.match(/\/deploy\s*$/)
             done()
           })
-          spawnProcs[0].emit('close', 0)
         })
       })
 
-      context('with spawn errors', function() {
+      context('with errors', function() {
         it('calls back with the error stack, if present', function(done) {
           var error = { stack: 'this is my stack'}
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('error', error)
+          })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             err.should.be.a.String
             err.should.eql(error.stack)
             done()
           })
-          spawnProcs[0].emit('error', error)
         })
 
         it('calls back with the error object, if no stack is present', function(done) {
           var error = { abc: 123 }
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('error', error)
+          })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             err.should.be.an.Object
             err.should.eql(error)
             done()
           })
-          spawnProcs[0].emit('error', error)
+        })
+      })
+
+      context('for multiple hosts', function() {
+        var hosts = ['1.1.1.1', '2.2.2.2', '3.3.3.3', '4.4.4.4']
+
+        beforeEach(function() {
+          conf.staging.host = hosts
+        })
+
+        it('runs each host in series', function(done) {
+          var spawnCount = 0
+          spawnNotifier.on('spawned', function(proc) {
+            spawnCount += 1
+            spawnCount.should.equal(1)
+            process.nextTick(function() {
+              proc.emit('close', 0)
+              spawnCount -= 1
+            })
+          })
+          deploy.deployForEnv(conf, 'staging', [], function(err, args) {
+            done()
+          })
+        })
+
+        it('echoes JSON blobs with customized host attributes', function(done) {
+          var spawnCount = 0
+
+          spawnNotifier.on('spawned', function(proc) {
+            var pipeFrom = spawnCalls[spawnCount][1][1].split(/\s*\|\s*/)[0]
+            pipeFrom.should.be.ok
+
+            var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
+            echoJSON.should.be.ok
+
+            var echoData = JSON.parse(echoJSON)
+            echoData.should.be.an.Object
+
+            echoData.ref.should.eql(conf.staging.ref)
+            echoData.user.should.eql(conf.staging.user)
+            echoData.repo.should.eql(conf.staging.repo)
+            echoData.path.should.eql(conf.staging.path)
+            echoData.host.should.eql(hosts[spawnCount])
+
+            spawnCount += 1
+
+            process.nextTick(function() {
+              proc.emit('close', 0)
+            })
+          })
+
+          deploy.deployForEnv(conf, 'staging', [], function(err, args) {
+            spawnCount.should.eql(4)
+            done()
+          })
+        })
+
+        it('invokes our callback with supplied argument arrays', function(done) {
+          var argsIn = [1,2,'three','four']
+          spawnNotifier.on('spawned', function(proc) {
+            proc.emit('close', 0)
+          })
+
+          deploy.deployForEnv(conf, 'staging', argsIn, function(err, argsOut) {
+            argsOut.should.be.an.Array
+            argsOut.length.should.eql(4)
+            argsOut[0].should.eql(argsIn)
+            argsOut[1].should.eql(argsIn)
+            argsOut[2].should.eql(argsIn)
+            argsOut[3].should.eql(argsIn)
+            done()
+          })
+        })
+
+        context('with errors', function() {
+          it('stops spawning processes after the first failure', function(done) {
+            var error = {abc: 123}
+            spawnNotifier.on('spawned', function(proc) {
+              proc.emit('error', error)
+            })
+            deploy.deployForEnv(conf, 'staging', [], function(err, args) {
+              err.should.be.an.Object
+              err.should.eql(error)
+              spawnCalls.length.should.eql(1)
+              done()
+            })
+          })
         })
       })
     })
