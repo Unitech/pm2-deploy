@@ -5,16 +5,18 @@ var deploy = require('../deploy.js')
 describe('deploy', function() {
   describe('deployForEnv', function() {
 
-    var spawnProc
-    var spawnArguments
+    var spawnCalls
+    var spawnProcs
     beforeEach(function() {
-      spawnArguments = []
-      spawnProc = new EventEmitter()
+      spawnCalls = []
+      spawnProcs = []
     })
 
     childProcess.spawn = function(cmd, args, options) {
-      spawnArguments = arguments
-      return spawnProc
+      spawnCalls.push(arguments)
+      var proc = new EventEmitter()
+      spawnProcs.push(proc)
+      return proc
     }
 
     var conf
@@ -99,24 +101,26 @@ describe('deploy', function() {
             argsOut.should.eql(argsIn)
             done()
           })
-          spawnProc.emit('close', 0)
+          spawnProcs[0].emit('close', 0)
         })
 
         it('invokes sh -c', function(done) {
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-            spawnArguments[0].should.equal('sh')
-            spawnArguments[1].should.be.an.Array
-            spawnArguments[1][0].should.equal('-c')
+            spawnCalls.length.should.equal(1)
+            spawnCalls[0][0].should.equal('sh')
+            spawnCalls[0][1].should.be.an.Array
+            spawnCalls[0][1][0].should.equal('-c')
             done()
           })
-          spawnProc.emit('close', 0)
+          spawnProcs[0].emit('close', 0)
         })
 
         it('echoes a json blob', function(done) {
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-            spawnArguments[1][1].should.be.a.String
+            spawnCalls.length.should.equal(1)
+            spawnCalls[0][1][1].should.be.a.String
 
-            var pipeFrom = spawnArguments[1][1].split(/\s*\|\s*/)[0]
+            var pipeFrom = spawnCalls[0][1][1].split(/\s*\|\s*/)[0]
             pipeFrom.should.be.ok
 
             var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
@@ -127,18 +131,19 @@ describe('deploy', function() {
             echoData.should.eql(conf.staging)
             done()
           })
-          spawnProc.emit('close', 0)
+          spawnProcs[0].emit('close', 0)
         })
 
         it('pipes to deploy', function(done) {
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-            spawnArguments[1][1].should.be.a.String
-            var pipeTo = spawnArguments[1][1].split(/\s*\|\s*/)[1]
+            spawnCalls.length.should.equal(1)
+            spawnCalls[0][1][1].should.be.a.String
+            var pipeTo = spawnCalls[0][1][1].split(/\s*\|\s*/)[1]
             pipeTo.should.be.ok
             pipeTo.should.match(/\/deploy\s*$/)
             done()
           })
-          spawnProc.emit('close', 0)
+          spawnProcs[0].emit('close', 0)
         })
       })
 
@@ -150,7 +155,7 @@ describe('deploy', function() {
             err.should.eql(error.stack)
             done()
           })
-          spawnProc.emit('error', error)
+          spawnProcs[0].emit('error', error)
         })
 
         it('calls back with the error object, if no stack is present', function(done) {
@@ -160,7 +165,7 @@ describe('deploy', function() {
             err.should.eql(error)
             done()
           })
-          spawnProc.emit('error', error)
+          spawnProcs[0].emit('error', error)
         })
       })
     })
