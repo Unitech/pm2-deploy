@@ -12,7 +12,7 @@ var childProcess = require('child_process');
  */
 function spawn(hostJSON, args, cb) {
   if (process.env.NODE_ENV !== 'test') {
-    console.log('--> Deploying in %s environment on host %s', env, hostJSON.host);
+    console.log('--> Deploying on host %s', hostJSON.host);
   }
 
   var shellSyntaxCommand = "echo '" + hostJSON + "' | " + __dirname + "/deploy " + args.join(' ');
@@ -46,6 +46,10 @@ function deployForEnv(deploy_conf, env, args, cb) {
     required: ["user", "host", "repo", "path", "ref"]
   })) {
     return cb(tv4.error);
+  }
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('--> Deploying in %s environment', env);
   }
 
   if (Array.isArray(target_conf.host)) {
