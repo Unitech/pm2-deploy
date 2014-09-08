@@ -6,13 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies" : {
-    "tv4" : "~1.0.18"
+  "dependencies": {
+    "async": "^0.9.0",
+    "tv4": "~1.0.18"
   },
   "devDependencies": {
+    "better-assert": "^1.0.0",
     "mocha": "^1.20.1",
-    "should": "^4.0.0",
-    "better-assert": "^1.0.0"
+    "should": "^4.0.0"
   },
   "author": "Alexandre Strzelewicz",
   "license": "AGPLV3"
