@@ -274,6 +274,7 @@ revert_to() {
 #
 
 check_for_local_changes() {
+  log "local check"
 }
 
 # parse argv
