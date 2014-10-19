@@ -49,6 +49,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
   }
 
   if (Array.isArray(target_conf.host)) {
+    var conf_copy = JSON.parse(JSON.stringify(target_conf));
     async.series(target_conf.host.reduce(function(jobs, host) {
       jobs.push(function(done) {
 
@@ -56,13 +57,10 @@ function deployForEnv(deploy_conf, env, args, cb) {
           console.log('--> on host %s', host);
         }
 
-        var custom_data = JSON.stringify({
-          host: host,
-          ref: target_conf.ref,
-          user: target_conf.user,
-          repo: target_conf.repo,
-          path: target_conf.path,
-        })
+        conf_copy.host = host;
+
+        var custom_data = JSON.stringify(conf_copy);
+
         spawn(custom_data, args, done);
       });
       return jobs;
