@@ -9,7 +9,7 @@
 
 VERSION="0.6.0"
 CONFIG=./deploy.conf
-LOG=./pm2-deploy.log
+LOG=/tmp/pm2-deploy.log
 TEST=1
 REF=
 ENV=
