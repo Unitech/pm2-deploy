@@ -54,7 +54,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
       jobs.push(function(done) {
 
         if (process.env.NODE_ENV !== 'test') {
-          console.log('--> on host %s', host);
+          console.log('--> on host %s', host.host ? host.host : host);
         }
 
         conf_copy.host = host;
