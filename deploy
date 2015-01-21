@@ -274,9 +274,14 @@ revert_to() {
 #
 
 check_for_local_changes() {
-  git --no-pager diff --exit-code --quiet          || abort "commit or stash your changes before deploying"
-  git --no-pager diff --exit-code --quiet --cached || abort "commit your staged changes before deploying"
-  [ -z "`git rev-list @{upstream}.. -n 1`" ]       || abort "push your changes before deploying"
+  local path=`config_get path`
+  
+  run "echo $path && cd $path/source && git --no-pager diff --exit-code --quiet"
+  test $? -eq 0 || abort "commit or stash your changes before deploying"
+  run "pwd && cd $path/source && git --no-pager diff --exit-code --quiet --cached"
+  test $? -eq 0 || abort "commit your staged changes before deploying"
+  run "cd $path/source && git rev-list @{upstream}.. -n 1 | xargs test -z"
+  test $? -eq 0 || abort "push your changes before deploying"
 }
 
 # parse argv
