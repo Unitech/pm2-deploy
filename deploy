@@ -169,6 +169,10 @@ deploy() {
   local ref=$1
   local path=`config_get path`
   log deploying
+  
+  log executing pre-deploy-local
+  local pdl=`config_get pre-deploy-local`
+  $pdl
 
   hook pre-deploy || abort pre-deploy hook failed
 
