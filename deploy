@@ -168,7 +168,7 @@ setup() {
 deploy() {
   local ref=$1
   local path=`config_get path`
-  log deploying
+  log "deploying ${ref}"
 
   hook pre-deploy || abort pre-deploy hook failed
 
@@ -300,7 +300,7 @@ while test $# -ne 0; do
     setup)  setup $@; exit ;;
     list)  list_deploys; exit ;;
     config) config $@; exit ;;
-    *) REF=$arg; exit ;;
+    *) REF=$arg ;;
   esac
 done
 
