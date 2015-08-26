@@ -3,6 +3,10 @@
   "version": "0.1.2",
   "description": "Deployment system for PM2",
   "main": "deploy.js",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/Unitech/pm2-deploy.git"
+  },
   "scripts": {
     "test": "mocha"
   },
