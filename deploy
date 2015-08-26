@@ -302,7 +302,6 @@ while test $# -ne 0; do
     config) config $@; exit ;;
     ref) REF=$1 ;;
   esac
-  echo $REF
 done
 
 check_for_local_changes
