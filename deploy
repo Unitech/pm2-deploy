@@ -11,6 +11,7 @@ VERSION="0.6.0"
 CONFIG=./deploy.conf
 LOG=/tmp/pm2-deploy.log
 TEST=1
+FORCE=0
 REF=
 ENV=
 
@@ -35,6 +36,7 @@ usage() {
     -T, --no-tests       ignore test hook
     -V, --version        output program version
     -h, --help           output help information
+    -f, --force          skip local change checking
 
   Commands:
 
@@ -282,12 +284,13 @@ revert_to() {
 check_for_local_changes() {
   local path=`config_get path`
 
-  run "echo $path && cd $path/source && git --no-pager diff --exit-code --quiet"
-  test $? -eq 0 || abort "commit or stash your changes before deploying"
-  run "pwd && cd $path/source && git --no-pager diff --exit-code --quiet --cached"
-  test $? -eq 0 || abort "commit your staged changes before deploying"
-  run "cd $path/source && git rev-list @{upstream}.. -n 1 | xargs test -z"
-  test $? -eq 0 || abort "push your changes before deploying"
+  if [ $FORCE -eq 1 ]
+  then
+      return
+  fi
+  git --no-pager diff --exit-code --quiet          || abort "commit or stash your changes before deploying"
+  git --no-pager diff --exit-code --quiet --cached || abort "commit your staged changes before deploying"
+  [ -z "`git rev-list @{upstream}.. -n 1`" ]       || abort "push your changes before deploying"
 }
 
 # parse argv
@@ -298,6 +301,7 @@ while test $# -ne 0; do
     -V|--version) version; exit ;;
     -C|--chdir) log cd $1; cd $1; shift ;;
     -T|--no-tests) TEST=0 ;;
+    -F|--force) FORCE=1 ;;
     run|exec)  run "cd `config_get path`/current && $@"; exit ;;
     console)  console; exit ;;
     curr|current)  current_commit; exit ;;
