@@ -168,7 +168,13 @@ setup() {
 deploy() {
   local ref=$1
   local path=`config_get path`
+
   log "deploying ${ref}"
+
+  # PR #50
+  log executing pre-deploy-local
+  local pdl=`config_get pre-deploy-local`
+  $pdl
 
   hook pre-deploy || abort pre-deploy hook failed
 
@@ -275,7 +281,7 @@ revert_to() {
 
 check_for_local_changes() {
   local path=`config_get path`
-  
+
   run "echo $path && cd $path/source && git --no-pager diff --exit-code --quiet"
   test $? -eq 0 || abort "commit or stash your changes before deploying"
   run "pwd && cd $path/source && git --no-pager diff --exit-code --quiet --cached"
