@@ -300,8 +300,7 @@ while test $# -ne 0; do
     setup)  setup $@; exit ;;
     list)  list_deploys; exit ;;
     config) config $@; exit ;;
-    '') ;;
-    *) REF=$arg ;;
+    ref) REF=$1 ;;
   esac
 done
 
