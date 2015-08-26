@@ -45,7 +45,7 @@ usage() {
     prev[ious]           output previous release commit
     exec|run <cmd>       execute the given <cmd>
     list                 list previous deploy commits
-    [ref]                deploy to [ref], the 'ref' setting, or latest tag
+    ref [ref]            deploy [ref]
 
 EOF
 }
@@ -168,7 +168,7 @@ setup() {
 deploy() {
   local ref=$1
   local path=`config_get path`
-  log deploying
+  log "deploying ${ref}"
 
   hook pre-deploy || abort pre-deploy hook failed
 
@@ -300,6 +300,7 @@ while test $# -ne 0; do
     setup)  setup $@; exit ;;
     list)  list_deploys; exit ;;
     config) config $@; exit ;;
+    ref) REF=$1 ;;
   esac
 done
 
