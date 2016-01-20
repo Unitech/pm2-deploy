@@ -135,7 +135,7 @@ hook() {
   local cmd=`config_get $hook`
   if test -n "$cmd"; then
     log "executing $hook \`$cmd\`"
-    run "cd $path/current; \
+    run "cd $path/source; \
       SHARED=\"$path/shared\" \
       $cmd 2>&1 | tee -a $LOG; \
       exit \${PIPESTATUS[0]}"
@@ -158,8 +158,6 @@ setup() {
   log cloning $repo
   run "git clone $repo $path/source"
   test $? -eq 0 || abort failed to clone
-  run "ln -sfn $path/source $path/current"
-  test $? -eq 0 || abort symlink failed
   log setup complete
 }
 
@@ -199,10 +197,6 @@ deploy() {
   log resetting HEAD to $ref
   run "cd $path/source && git reset --hard $ref"
   test $? -eq 0 || abort git reset failed
-
-  # link current
-  run "ln -sfn $path/source $path/current"
-  test $? -eq 0 || abort symlink failed
 
   # deploy log
   run "cd $path/source && \
@@ -302,7 +296,7 @@ while test $# -ne 0; do
     -C|--chdir) log cd $1; cd $1; shift ;;
     -T|--no-tests) TEST=0 ;;
     -F|--force) FORCE=1 ;;
-    run|exec)  run "cd `config_get path`/current && $@"; exit ;;
+    run|exec)  run "cd `config_get path`/source && $@"; exit ;;
     console)  console; exit ;;
     curr|current)  current_commit; exit ;;
     prev|previous)  nth_deploy_commit 2; exit ;;
