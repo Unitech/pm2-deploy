@@ -110,10 +110,33 @@ ssh_command() {
 # Run the given remote <cmd>.
 #
 
-run() {
+runRemote() {
   local shell="`ssh_command`"
   echo $shell "\"$@\"" >> $LOG
   $shell $@
+}
+
+#
+# Run the given local <cmd>.
+#
+
+runLocal() {
+  echo "\"$@\"" >> $LOG
+  /usr/bin/env bash -c "$*"
+}
+
+#
+# Run the given <cmd> either locally or remotely
+#
+
+run() {
+  local host="`config_get host`"
+  if [[ $host == localhost ]]
+  then
+    runLocal $@
+  else
+    runRemote $@
+  fi
 }
 
 #
@@ -176,7 +199,7 @@ deploy() {
   # PR #50
   log executing pre-deploy-local
   local pdl=`config_get pre-deploy-local`
-  $pdl
+  runLocal $pdl
 
   hook pre-deploy || abort pre-deploy hook failed
 
