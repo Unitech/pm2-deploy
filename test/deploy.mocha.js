@@ -1,4 +1,5 @@
 var EventEmitter = require('events').EventEmitter
+var path = require('path')
 var childProcess = require('child_process')
 var deploy = require('../deploy.js')
 
@@ -223,7 +224,7 @@ describe('deploy', function() {
             echoData.ref.should.eql(conf.staging.ref)
             echoData.user.should.eql(conf.staging.user)
             echoData.repo.should.eql(conf.staging.repo)
-            echoData.path.should.eql(conf.staging.path)
+            echoData.path.should.eql(path.resolve(conf.staging.path))
             echoData.host.should.eql(hosts[spawnCount])
 
             spawnCount += 1

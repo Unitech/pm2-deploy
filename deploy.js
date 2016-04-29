@@ -2,6 +2,7 @@ var fs = require('fs');
 var tv4 = require('tv4');
 var async = require('async');
 var childProcess = require('child_process');
+var path = require('path');
 
 /**
  * Spawn a modified version of visionmedia/deploy
@@ -35,8 +36,8 @@ function spawn(hostJSON, args, cb) {
 function deployForEnv(deploy_conf, env, args, cb) {
   if (!deploy_conf[env]) return cb(env + ' not defined in deploy section');
 
-  var target_conf = deploy_conf[env];
-  var piped_data  = JSON.stringify(target_conf);
+  var piped_data  = JSON.stringify(deploy_conf[env]);
+  var target_conf = JSON.parse(piped_data); //effectively clones the conf
 
   if (!tv4.validate(target_conf, {
     required: ["user", "host", "repo", "path", "ref"]
@@ -48,8 +49,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
     console.log('--> Deploying to %s environment', env);
   }
 
+  target_conf.path = path.resolve(target_conf.path);
+
   if (Array.isArray(target_conf.host)) {
-    var conf_copy = JSON.parse(JSON.stringify(target_conf));
     async.series(target_conf.host.reduce(function(jobs, host) {
       jobs.push(function(done) {
 
@@ -57,9 +59,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
           console.log('--> on host %s', host.host ? host.host : host);
         }
 
-        conf_copy.host = host;
+        target_conf.host = host;
 
-        var custom_data = JSON.stringify(conf_copy);
+        var custom_data = JSON.stringify(target_conf);
 
         spawn(custom_data, args, done);
       });
