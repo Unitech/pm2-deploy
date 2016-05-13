@@ -36,6 +36,17 @@ function deployForEnv(deploy_conf, env, args, cb) {
   if (!deploy_conf[env]) return cb(env + ' not defined in deploy section');
 
   var target_conf = deploy_conf[env];
+
+  if(target_conf.ssh_options) {
+    var ssh_opt = '';
+    if(Array.isArray(target_conf.ssh_options)) {
+      ssh_opt = '-o ' + target_conf.ssh_options.join(' -o ');
+    } else {
+      ssh_opt = '-o ' + target_conf.ssh_options;
+    }
+    target_conf.ssh_options = ssh_opt;
+  }
+
   var piped_data  = JSON.stringify(target_conf);
 
   if (!tv4.validate(target_conf, {
