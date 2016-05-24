@@ -154,7 +154,7 @@ describe('deploy', function() {
             spawnCalls[0][1][1].should.be.a.String
             var pipeTo = spawnCalls[0][1][1].split(/\s*\|\s*/)[1]
             pipeTo.should.be.ok
-            pipeTo.should.match(/\/deploy\s*$/)
+            pipeTo.should.match(/\/deploy"\s*$/)
             done()
           })
         })
