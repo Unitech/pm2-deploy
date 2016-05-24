@@ -1,6 +1,6 @@
 {
   "name": "pm2-deploy",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Deployment system for PM2",
   "main": "deploy.js",
   "repository": {
@@ -11,8 +11,8 @@
     "test": "mocha"
   },
   "dependencies": {
-    "async": "1.4.2",
-    "tv4": "~1.0.18"
+    "async": "^1.5",
+    "tv4": "^1.2"
   },
   "devDependencies": {
     "better-assert": "^1.0.0",
