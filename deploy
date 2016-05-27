@@ -99,12 +99,14 @@ ssh_command() {
   local forward_agent="`config_get forward-agent`"
   local port="`config_get port`"
   local needs_tty="`config_get needs_tty`"
+  local ssh_options="`config_get ssh_options`"
 
   test -n "$forward_agent" && local agent="-A"
   test -n "$key" && local identity="-i $key"
   test -n "$port" && local port="-p $port"
   test -n "$needs_tty" && local tty="-t"
-  echo "ssh $tty $agent $port $identity $url"
+  test -n "ssh_options" && local ssh_opts="$ssh_options"
+  echo "ssh $ssh_opts $tty $agent $port $identity $url"
 }
 
 #
