@@ -1,11 +1,11 @@
 {
   "name": "pm2-deploy",
-  "version": "0.3.0",
+  "version": "0.3.1-0",
   "description": "Deployment system for PM2",
   "main": "deploy.js",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/Unitech/pm2-deploy.git"
+    "type": "git",
+    "url": "https://github.com/Unitech/pm2-deploy.git"
   },
   "scripts": {
     "test": "mocha"
