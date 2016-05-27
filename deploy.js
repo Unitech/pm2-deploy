@@ -39,6 +39,16 @@ function deployForEnv(deploy_conf, env, args, cb) {
   var piped_data  = JSON.stringify(deploy_conf[env]);
   var target_conf = JSON.parse(piped_data); //effectively clones the conf
 
+  if(target_conf.ssh_options) {
+    var ssh_opt = '';
+    if(Array.isArray(target_conf.ssh_options)) {
+      ssh_opt = '-o ' + target_conf.ssh_options.join(' -o ');
+    } else {
+      ssh_opt = '-o ' + target_conf.ssh_options;
+    }
+    target_conf.ssh_options = ssh_opt;
+  }
+
   if (!tv4.validate(target_conf, {
     required: ["user", "host", "repo", "path", "ref"]
   })) {
