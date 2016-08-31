@@ -59,6 +59,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
     console.log('--> Deploying to %s environment', env);
   }
 
+  if (process.platform !== 'win32' && process.platform !== 'win64')
+    target_conf.path = path.resolve(target_conf.path);
+
   if (Array.isArray(target_conf.host)) {
     async.series(target_conf.host.reduce(function(jobs, host) {
       jobs.push(function(done) {
