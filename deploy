@@ -170,14 +170,14 @@ hook() {
 
 #
 # Pre Setup hook runs on the host before the actual setup runs
-# multiple commands or a script in the same directory as host definitions
+# multiple commands or a script
 #
 
 hook_pre_setup() {
   local cmd=`config_get pre-setup`
   if test -n "$cmd"; then
     local is_script=($cmd)
-    if [ -f "`pwd`/${is_script[0]}" ]; then
+    if [ -f "${is_script[0]}" ]; then
       log "executing pre-setup script \`$cmd\`"
       local shell="`ssh_command`"
       runLocal "$shell 'bash -s' -- < $cmd"
