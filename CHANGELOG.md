@@ -1,4 +1,9 @@
 
+# 0.3.2
+
+- #103 ability to run a script even before cloning the repository
+- #98 (windows) remove resolving of remote path in local
+
 # 0.3.0
 
 - [#91] fix: Fixed a bug if package path contains spaces
