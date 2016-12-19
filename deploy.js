@@ -83,7 +83,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
     if (process.env.NODE_ENV !== 'test') {
       console.log('--> on host %s', target_conf.host);
     }
-    spawn(piped_data, args, cb);
+    spawn(JSON.stringify(target_conf), args, cb);
   }
 
   return false;
