@@ -140,7 +140,11 @@ describe('deploy', function() {
 
             var echoData = JSON.parse(echoJSON)
             echoData.should.be.an.Object
-            echoData.should.eql(conf.staging)
+            echoData.ref.should.eql(conf.staging.ref)
+            echoData.user.should.eql(conf.staging.user)
+            echoData.repo.should.eql(conf.staging.repo)
+            echoData.path.should.eql(path.resolve(conf.staging.path))
+            echoData.host.should.eql(conf.staging.host)
             done()
           })
         })
