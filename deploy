@@ -235,7 +235,7 @@ deploy() {
 
   # fetch source
   log fetching updates
-  run "cd $path/source && git fetch --depth=5 --all --tags"
+  run "cd $path/source && git fetch --depth=5 --all"
   test $? -eq 0 || abort fetch failed
 
   # latest tag
