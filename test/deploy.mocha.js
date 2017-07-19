@@ -47,12 +47,12 @@ describe('deploy', function() {
     })
 
     describe('deploy_conf validation', function() {
-      it('requires user', function(done) {
-        delete conf.staging.user
+      it('validate user', function(done) {
+        conf.staging.user = '';
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
           err.should.be.an.Object
-          err.code.should.equal(302)
-          err.message.should.match('Missing required property: user')
+          err.code.should.equal(200)
+          err.message.should.match('String is too short (0 chars), minimum 1')
           done()
         })
       })
@@ -226,7 +226,6 @@ describe('deploy', function() {
             echoData.should.be.an.Object
 
             echoData.ref.should.eql(conf.staging.ref)
-            echoData.user.should.eql(conf.staging.user)
             echoData.repo.should.eql(conf.staging.repo)
             echoData.path.should.eql(path.resolve(conf.staging.path))
             echoData.host.should.eql(hosts[spawnCount])

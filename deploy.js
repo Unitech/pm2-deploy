@@ -50,7 +50,26 @@ function deployForEnv(deploy_conf, env, args, cb) {
   }
 
   if (!tv4.validate(target_conf, {
-    required: ["user", "host", "repo", "path", "ref"]
+    type: 'object',
+    properties: {
+      user: {
+        type: 'string',
+        minLength: 1,
+      },
+      host: {
+        type: ['string', 'array'],
+      },
+      repo: {
+        type: 'string',
+      },
+      path: {
+        type: 'string',
+      },
+      ref: {
+        type: 'string',
+      },
+    },
+    required: ["host", "repo", "path", "ref"],
   })) {
     return cb(tv4.error);
   }
