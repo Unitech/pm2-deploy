@@ -1,4 +1,8 @@
 
+# 0.3.6
+
+- ability to omit user in deploy_conf
+
 # 0.3.2
 
 - #103 ability to run a script even before cloning the repository
