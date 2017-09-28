@@ -68,6 +68,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
       ref: {
         type: 'string',
       },
+      fetch: {
+        type: 'string',
+      },
     },
     required: ["host", "repo", "path", "ref"],
   })) {
