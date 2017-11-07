@@ -242,7 +242,7 @@ deploy() {
   # PR #50
   log executing pre-deploy-local
   local pdl=`config_get pre-deploy-local`
-  runLocal $pdl
+  runLocal $pdl || abort pre-deploy-local hook failed
 
   hook pre-deploy || abort pre-deploy hook failed
 
@@ -252,7 +252,7 @@ deploy() {
   if test fetch != "fast"; then
     log "full fetch"
     run "cd $path/source && git fetch --all --tags"
-  else 
+  else
     log "fast fetch"
     run "cd $path/source && git fetch --depth=5 --all --tags"
   fi
