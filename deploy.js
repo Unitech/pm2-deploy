@@ -114,7 +114,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
 }
 
 function objectToEnvVars(obj) {
-  return Object.keys(obj).map(function (key) {
+  return !obj ? '' : Object.keys(obj).map(function (key) {
     return key.toUpperCase() + '=' + obj[key];
   }).join(' ')
 }
