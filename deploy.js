@@ -1,6 +1,6 @@
 var fs = require('fs');
 var tv4 = require('tv4');
-var async = require('async');
+var series = require('async/series');
 var childProcess = require('child_process');
 var path = require('path');
 
@@ -85,7 +85,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
     target_conf.path = path.resolve(target_conf.path);
 
   if (Array.isArray(target_conf.host)) {
-    async.series(target_conf.host.reduce(function (jobs, host) {
+    series(target_conf.host.reduce(function (jobs, host) {
       jobs.push(function (done) {
 
         if (process.env.NODE_ENV !== 'test') {
