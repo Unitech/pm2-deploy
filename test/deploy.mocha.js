@@ -172,7 +172,7 @@ describe('deploy', function() {
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             err.should.be.a.String
-            err.should.eql(error.stack)
+            err.stack.should.eql(error.stack)
             done()
           })
         })

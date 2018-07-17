@@ -14,14 +14,15 @@ var path = require('path');
 function spawn(hostJSON, args, cb) {
   var shellSyntaxCommand = "echo '" + hostJSON + "' | \"" + __dirname.replace(/\\/g, '/') + "/deploy\" " + args.join(' ');
   var proc = childProcess.spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
+  var error;
 
   proc.on('error', function (e) {
-    return cb(e.stack || e);
+    error = e;
   });
 
   proc.on('close', function (code) {
     if (code == 0) return cb(null, args);
-    else return cb(code);
+    else return cb(error || code);
   });
 }
 
@@ -130,7 +131,7 @@ function run() {
 
   var env = args[0];
 
-  Deploy.deployForEnv(conf.deploy, env, args, function (err, data) {
+  deployForEnv(conf.deploy, env, args, function (err, data) {
     console.log(arguments);
   });
 }
