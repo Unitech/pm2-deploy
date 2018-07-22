@@ -216,7 +216,11 @@ setup() {
   log cloning $repo
   if test fetch != "fast"; then
     log "full fetch"
-    run "git clone $repo $path/source"
+    if [ -n $branch ]; then
+      run "git clone $repo $path/source"
+    else
+      run "git clone $repo --branch $branch $path/source"
+    fi
   else
     log "fast fetch"
     run "git clone --depth=5 --branch $branch $repo $path/source"
