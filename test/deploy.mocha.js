@@ -169,6 +169,7 @@ describe('deploy', function() {
           var error = { stack: 'this is my stack'}
           spawnNotifier.on('spawned', function(proc) {
             proc.emit('error', error)
+            proc.emit('close', 1)
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             err.should.be.a.String
@@ -181,6 +182,7 @@ describe('deploy', function() {
           var error = { abc: 123 }
           spawnNotifier.on('spawned', function(proc) {
             proc.emit('error', error)
+            proc.emit('close', 1)
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             err.should.be.an.Object
@@ -265,6 +267,7 @@ describe('deploy', function() {
             var error = {abc: 123}
             spawnNotifier.on('spawned', function(proc) {
               proc.emit('error', error)
+              proc.emit('close', 1)
             })
             deploy.deployForEnv(conf, 'staging', [], function(err, args) {
               err.should.be.an.Object

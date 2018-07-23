@@ -22,7 +22,9 @@ function spawn(hostJSON, args, cb) {
 
   proc.on('close', function (code) {
     if (code == 0) return cb(null, args);
-    else return cb(error || code);
+    else {
+      return cb(error || code);
+    }
   });
 }
 
@@ -120,26 +122,6 @@ function objectToEnvVars(obj) {
   }).join(' ')
 }
 
-function run() {
-  var conf = JSON.parse(fs.readFileSync('app.json'));
-  var args = process.argv;
-
-  if (args.indexOf('deploy') == -1)
-    throw new Error('deploy argument not found');
-
-  args.splice(0, args.indexOf('deploy') + 1);
-
-  var env = args[0];
-
-  deployForEnv(conf.deploy, env, args, function (err, data) {
-    console.log(arguments);
-  });
-}
-
 module.exports = {
   deployForEnv: deployForEnv
 };
-
-if (require.main === module) {
-  run();
-}
