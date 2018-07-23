@@ -251,7 +251,7 @@ deploy() {
 
   hook pre-deploy || abort pre-deploy hook failed
 
-  if run "cd $path/source && git rev-parse --quiet --verify $branh" > /dev/null; then
+  if run "cd $path/source && git rev-parse --quiet --verify $branch" > /dev/null; then
     log fast forward $branch
     run "cd $path/source && git checkout $branch && git pull origin $branch"
     test $? -eq 0 || abort git pull failed
