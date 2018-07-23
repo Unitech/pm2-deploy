@@ -251,33 +251,29 @@ deploy() {
 
   hook pre-deploy || abort pre-deploy hook failed
 
-  # fetch source
-  log fetching updates
-
-  if test $fetch != "fast"; then
-    log "full fetch"
-    run "cd $path/source && git fetch --all --tags"
+  if run "git rev-parse --quiet --verify $branh" > /dev/null; then
+    log fast forward $branch
+    run "cd $path/source && git checkout $branch && git pull origin $branch"
+    test $? -eq 0 || abort git pull failed
   else
-    log "fast fetch"
-    run "cd $path/source && git fetch --depth=5 --all --tags"
+    # fetch source
+    log fetching updates
+
+    if test $fetch != "fast"; then
+      log "full fetch"
+      run "cd $path/source && git fetch --all --tags"
+    else
+      log "fast fetch"
+      run "cd $path/source && git fetch --depth=5 --all --tags"
+    fi
+
+    test $? -eq 0 || abort fetch failed
+
+    # checkout ref to branch
+    log checkout $ref to $branch
+    run "cd $path/source && git checkout $ref -b $branch"
+    test $? -eq 0 || abort git checkout failed
   fi
-
-  test $? -eq 0 || abort fetch failed
-
-  # latest tag
-  if test -z "$ref"; then
-    log fetching latest tag
-    ref=`run "cd $path/source && git for-each-ref refs/tags \
-      --sort=-*authordate \
-      --format='%(refname)' \
-      --count=1 | cut -d '/' -f 3"`
-    test $? -eq 0 || abort failed to determine latest tag
-  fi
-
-  # checkout ref to branch
-  log checkout $ref to $branch
-  run "cd $path/source && git checkout $ref -b $branch"
-  test $? -eq 0 || abort git checkout failed
 
   # link current
   run "ln -sfn $path/source $path/current"
