@@ -3,6 +3,9 @@
   "version": "0.3.10",
   "description": "Deployment system for PM2",
   "main": "deploy.js",
+  "engines": {
+    "node": ">=4.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Unitech/pm2-deploy.git"
