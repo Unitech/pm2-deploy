@@ -1,4 +1,3 @@
-var fs = require('fs');
 var tv4 = require('tv4');
 var series = require('async/series');
 var childProcess = require('child_process');
@@ -87,6 +86,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
   if (process.platform !== 'win32' && process.platform !== 'win64')
     target_conf.path = path.resolve(target_conf.path);
 
+  var originalPostDeploy = target_conf['post-deploy']
   if (Array.isArray(target_conf.host)) {
     series(target_conf.host.reduce(function (jobs, host) {
       jobs.push(function (done) {
@@ -96,10 +96,10 @@ function deployForEnv(deploy_conf, env, args, cb) {
         }
 
         target_conf.host = host;
-        target_conf['post-deploy'] = 'export ' + objectToEnvVars(target_conf.env) + ' && ' + target_conf['post-deploy']
-        var custom_data = JSON.stringify(target_conf);
+        var envVars = objectToEnvVars(target_conf.env);
+        target_conf['post-deploy'] = (envVars && 'export ' + envVars + ' && ') + originalPostDeploy;
 
-        spawn(custom_data, args, done);
+        spawn(JSON.stringify(target_conf), args, done);
       });
       return jobs;
     }, []), cb);
@@ -109,7 +109,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
       console.log('--> on host %s', target_conf.host);
     }
 
-    target_conf['post-deploy'] = 'export ' + objectToEnvVars(target_conf.env) + ' && ' + target_conf['post-deploy']
+    var envVars = objectToEnvVars(target_conf.env);
+    target_conf['post-deploy'] = (envVars && 'export ' + envVars + ' && ') + originalPostDeploy;
+
     spawn(JSON.stringify(target_conf), args, cb);
   }
 

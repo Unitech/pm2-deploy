@@ -32,7 +32,8 @@ describe('deploy', function() {
           host: 'host',
           repo: 'repo',
           path: 'path',
-          ref: 'ref'
+          ref: 'ref',
+          'post-deploy': 'post-deploy',
         }
       }
     })
@@ -145,7 +146,17 @@ describe('deploy', function() {
             echoData.repo.should.eql(conf.staging.repo)
             echoData.path.should.eql(path.resolve(conf.staging.path))
             echoData.host.should.eql(conf.staging.host)
-            done()
+            echoData['post-deploy'].should.eql(conf.staging['post-deploy'])
+
+            conf.staging.env = { a: 1, b: 2 }
+            deploy.deployForEnv(conf, 'staging', [], function() {
+              spawnCalls.length.should.equal(2)
+              spawnCalls[1][1][1].should.be.a.String
+              echoData = JSON.parse( spawnCalls[1][1][1].match(/^echo '(.+?)'/)[1] )
+              echoData['post-deploy']
+                .should.eql('export A=1 B=2 && ' + conf.staging['post-deploy'])
+              done()
+            })
           })
         })
 
@@ -231,6 +242,7 @@ describe('deploy', function() {
             echoData.repo.should.eql(conf.staging.repo)
             echoData.path.should.eql(path.resolve(conf.staging.path))
             echoData.host.should.eql(hosts[spawnCount])
+            echoData['post-deploy'].should.eql(conf.staging['post-deploy'])
 
             spawnCount += 1
 
@@ -240,6 +252,39 @@ describe('deploy', function() {
           })
 
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
+            spawnCount.should.eql(4)
+            done()
+          })
+        })
+
+        it('echoes JSON blobs with customized host and env attributes', function(done) {
+          var spawnCount = 0
+
+          spawnNotifier.on('spawned', function(proc) {
+            var pipeFrom = spawnCalls[spawnCount][1][1].split(/\s*\|\s*/)[0]
+            pipeFrom.should.be.ok
+
+            var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
+            echoJSON.should.be.ok
+
+            var echoData = JSON.parse(echoJSON)
+            echoData.should.be.an.Object
+
+            echoData.ref.should.eql(conf.staging.ref)
+            echoData.repo.should.eql(conf.staging.repo)
+            echoData.path.should.eql(path.resolve(conf.staging.path))
+            echoData.host.should.eql(hosts[spawnCount])
+            echoData['post-deploy'].should.eql('export A=1 B=2 && ' + conf.staging['post-deploy'])
+
+            spawnCount += 1
+
+            process.nextTick(function() {
+              proc.emit('close', 0)
+            })
+          })
+
+          Object.assign(conf.staging, { env: { a: 1, b: 2 } })
+          deploy.deployForEnv(conf, 'staging', [], function() {
             spawnCount.should.eql(4)
             done()
           })
