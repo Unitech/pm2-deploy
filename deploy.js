@@ -88,7 +88,7 @@ function deployForEnv(deploy_conf, env, args, cb) {
 
   var originalPostDeploy = typeof target_conf['post-deploy'] === 'string'
     ? target_conf['post-deploy']
-    : ''
+    : '';
   if (Array.isArray(target_conf.host)) {
     series(target_conf.host.reduce(function (jobs, host) {
       jobs.push(function (done) {
@@ -130,6 +130,10 @@ function objectToEnvVars(obj) {
   }).join(' ')
 }
 
+/**
+ * @param {string} cmd
+ * @param {string} envVars
+ */
 function prependEnvVars(cmd, envVars) {
   return (envVars && 'export ' + envVars + (cmd && ' && ')) + cmd;
 }
