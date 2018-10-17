@@ -153,9 +153,18 @@ describe('deploy', function() {
               spawnCalls.length.should.equal(2)
               spawnCalls[1][1][1].should.be.a.String
               echoData = JSON.parse( spawnCalls[1][1][1].match(/^echo '(.+?)'/)[1] )
-              echoData['post-deploy']
-                .should.eql('export A=1 B=2 && ' + conf.staging['post-deploy'])
-              done()
+              echoData['post-deploy'].should.eql(
+                'export A=1 B=2 && ' + conf.staging['post-deploy']
+              )
+
+              conf.staging['post-deploy'] = ''
+              deploy.deployForEnv(conf, 'staging', [], function() {
+                spawnCalls.length.should.equal(3)
+                spawnCalls[2][1][1].should.be.a.String
+                echoData = JSON.parse( spawnCalls[2][1][1].match(/^echo '(.+?)'/)[1] )
+                echoData['post-deploy'].should.eql('export A=1 B=2')
+                done()
+              })
             })
           })
         })
