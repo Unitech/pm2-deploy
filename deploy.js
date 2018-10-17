@@ -1,3 +1,4 @@
+var fs = require('fs');
 var tv4 = require('tv4');
 var series = require('async/series');
 var childProcess = require('child_process');
