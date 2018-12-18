@@ -214,9 +214,9 @@ setup() {
   test $? -eq 0 || abort setup paths failed
   log running setup
   log cloning $repo
-  if test fetch != "fast"; then
+  if test $fetch != "fast"; then
     log "full fetch"
-    run "git clone $repo $path/source"
+    run "git clone $repo --branch $branch  $path/source"
   else
     log "fast fetch"
     run "git clone --depth=5 --branch $branch $repo $path/source"
@@ -249,7 +249,7 @@ deploy() {
   # fetch source
   log fetching updates
 
-  if test fetch != "fast"; then
+  if test $fetch != "fast"; then
     log "full fetch"
     run "cd $path/source && git fetch --all --tags"
   else
