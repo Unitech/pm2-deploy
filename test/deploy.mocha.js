@@ -39,19 +39,19 @@ describe('deploy', function() {
     })
 
     it('is a function', function() {
-      deploy.deployForEnv.should.be.a.Function
+      deploy.deployForEnv.should.be.a.Function()
     })
 
-    it('returns false', function() {
+    it('returns false()', function() {
       var ret = deploy.deployForEnv(conf, 'staging', [], function() {})
-      ret.should.be.false
+      ret.should.be.false()
     })
 
     describe('deploy_conf validation', function() {
       it('validate user', function(done) {
         conf.staging.user = '';
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-          err.should.be.an.Object
+          err.should.be.an.Object()
           err.code.should.equal(200)
           err.message.should.match('String is too short (0 chars), minimum 1')
           done()
@@ -61,7 +61,7 @@ describe('deploy', function() {
       it('requires host', function(done) {
         delete conf.staging.host
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-          err.should.be.an.Object
+          err.should.be.an.Object()
           err.code.should.equal(302)
           err.message.should.match('Missing required property: host')
           done()
@@ -71,7 +71,7 @@ describe('deploy', function() {
       it('requires repo', function(done) {
         delete conf.staging.repo
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-          err.should.be.an.Object
+          err.should.be.an.Object()
           err.code.should.equal(302)
           err.message.should.match('Missing required property: repo')
           done()
@@ -81,7 +81,7 @@ describe('deploy', function() {
       it('requires path', function(done) {
         delete conf.staging.path
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-          err.should.be.an.Object
+          err.should.be.an.Object()
           err.code.should.equal(302)
           err.message.should.match('Missing required property: path')
           done()
@@ -91,7 +91,7 @@ describe('deploy', function() {
       it('requires ref', function(done) {
         delete conf.staging.ref
         deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-          err.should.be.an.Object
+          err.should.be.an.Object()
           err.code.should.equal(302)
           err.message.should.match('Missing required property: ref')
           done()
@@ -119,7 +119,7 @@ describe('deploy', function() {
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
             spawnCalls[0][0].should.equal('sh')
-            spawnCalls[0][1].should.be.an.Array
+            spawnCalls[0][1].should.be.an.Array()
             spawnCalls[0][1][0].should.equal('-c')
             done()
           })
@@ -131,16 +131,16 @@ describe('deploy', function() {
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
-            spawnCalls[0][1][1].should.be.a.String
+            spawnCalls[0][1][1].should.be.a.String()
 
             var pipeFrom = spawnCalls[0][1][1].split(/\s*\|\s*/)[0]
-            pipeFrom.should.be.ok
+            pipeFrom.should.be.ok()
 
             var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
-            echoJSON.should.be.ok
+            echoJSON.should.be.ok()
 
             var echoData = JSON.parse(echoJSON)
-            echoData.should.be.an.Object
+            echoData.should.be.an.Object()
             echoData.ref.should.eql(conf.staging.ref)
             echoData.user.should.eql(conf.staging.user)
             echoData.repo.should.eql(conf.staging.repo)
@@ -151,7 +151,7 @@ describe('deploy', function() {
             conf.staging.env = { a: 1, b: 2 }
             deploy.deployForEnv(conf, 'staging', [], function() {
               spawnCalls.length.should.equal(2)
-              spawnCalls[1][1][1].should.be.a.String
+              spawnCalls[1][1][1].should.be.a.String()
               echoData = JSON.parse( spawnCalls[1][1][1].match(/^echo '(.+?)'/)[1] )
               echoData['post-deploy'].should.eql(
                 'export A=1 B=2 && ' + conf.staging['post-deploy']
@@ -160,7 +160,7 @@ describe('deploy', function() {
               conf.staging['post-deploy'] = ''
               deploy.deployForEnv(conf, 'staging', [], function() {
                 spawnCalls.length.should.equal(3)
-                spawnCalls[2][1][1].should.be.a.String
+                spawnCalls[2][1][1].should.be.a.String()
                 echoData = JSON.parse( spawnCalls[2][1][1].match(/^echo '(.+?)'/)[1] )
                 echoData['post-deploy'].should.eql('export A=1 B=2')
                 done()
@@ -175,9 +175,9 @@ describe('deploy', function() {
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
             spawnCalls.length.should.equal(1)
-            spawnCalls[0][1][1].should.be.a.String
+            spawnCalls[0][1][1].should.be.a.String()
             var pipeTo = spawnCalls[0][1][1].split(/\s*\|\s*/)[1]
-            pipeTo.should.be.ok
+            pipeTo.should.be.ok()
             pipeTo.should.match(/\/deploy"\s*$/)
             done()
           })
@@ -192,7 +192,7 @@ describe('deploy', function() {
             proc.emit('close', 1)
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-            err.should.be.a.String
+            err.should.be.an.Object()
             err.stack.should.eql(error.stack)
             done()
           })
@@ -205,7 +205,7 @@ describe('deploy', function() {
             proc.emit('close', 1)
           })
           deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-            err.should.be.an.Object
+            err.should.be.an.Object()
             err.should.eql(error)
             done()
           })
@@ -239,13 +239,13 @@ describe('deploy', function() {
 
           spawnNotifier.on('spawned', function(proc) {
             var pipeFrom = spawnCalls[spawnCount][1][1].split(/\s*\|\s*/)[0]
-            pipeFrom.should.be.ok
+            pipeFrom.should.be.ok()
 
             var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
-            echoJSON.should.be.ok
+            echoJSON.should.be.ok()
 
             var echoData = JSON.parse(echoJSON)
-            echoData.should.be.an.Object
+            echoData.should.be.an.Object()
 
             echoData.ref.should.eql(conf.staging.ref)
             echoData.repo.should.eql(conf.staging.repo)
@@ -271,13 +271,13 @@ describe('deploy', function() {
 
           spawnNotifier.on('spawned', function(proc) {
             var pipeFrom = spawnCalls[spawnCount][1][1].split(/\s*\|\s*/)[0]
-            pipeFrom.should.be.ok
+            pipeFrom.should.be.ok()
 
             var echoJSON = pipeFrom.match(/^echo '(.+?)'/)[1]
-            echoJSON.should.be.ok
+            echoJSON.should.be.ok()
 
             var echoData = JSON.parse(echoJSON)
-            echoData.should.be.an.Object
+            echoData.should.be.an.Object()
 
             echoData.ref.should.eql(conf.staging.ref)
             echoData.repo.should.eql(conf.staging.repo)
@@ -306,7 +306,7 @@ describe('deploy', function() {
           })
 
           deploy.deployForEnv(conf, 'staging', argsIn, function(err, argsOut) {
-            argsOut.should.be.an.Array
+            argsOut.should.be.an.Array()
             argsOut.length.should.eql(4)
             argsOut[0].should.eql(argsIn)
             argsOut[1].should.eql(argsIn)
@@ -324,7 +324,7 @@ describe('deploy', function() {
               proc.emit('close', 1)
             })
             deploy.deployForEnv(conf, 'staging', [], function(err, args) {
-              err.should.be.an.Object
+              err.should.be.an.Object()
               err.should.eql(error)
               spawnCalls.length.should.eql(1)
               done()
