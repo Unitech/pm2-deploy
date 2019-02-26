@@ -14,7 +14,7 @@ TEST=1
 FORCE=0
 REF=
 ENV=
-
+REVERTMODE=0
 #
 # Read PIPED JSON
 #
@@ -241,6 +241,15 @@ deploy() {
   fi
   local path=`config_get path`
   local fetch=`config_get fetch`
+  
+  run "cd $path/source && git fetch --all --tags"
+  
+  local lastDeployId=$(tail -n 1 $path/.deploys)
+  local currentDeployId=$(git rev-parse --short $ref)
+  
+  if [ "$currentDeployId" == "$lastDeployId" ]; then
+     abort = "$currentDeployId is currently deployed, aborting..."
+  fi
 
   log "deploying ${ref}"
 
@@ -253,7 +262,7 @@ deploy() {
 
   if run "cd $path/source && git rev-parse --quiet --verify $branch" > /dev/null; then
     log fast forward $branch
-    run "cd $path/source && git checkout $branch && git pull origin $branch"
+    run "cd $path/source && git merge $ref && git checkout $branch"
     test $? -eq 0 || abort git pull failed
   else
     # fetch source
@@ -280,10 +289,12 @@ deploy() {
   test $? -eq 0 || abort symlink failed
 
   # deploy log
-  run "cd $path/source && \
+  if test $REVERTMODE -ne 1; then
+    run "cd $path/source && \
       echo \`git rev-parse --short HEAD\` \
       >> $path/.deploys"
-  test $? -eq 0 || abort deploy log append failed
+    test $? -eq 0 || abort deploy log append failed
+  fi
 
   hook post-deploy || abort post-deploy hook failed
 
@@ -347,6 +358,7 @@ quickly_revert_to() {
 
 revert_to() {
   local n=$1
+  REVERTMODE=1
   log "reverting $n deploy(s)"
   local commit=`nth_deploy_commit $((n + 1))`
   deploy "$commit"
@@ -363,9 +375,9 @@ check_for_local_changes() {
   then
       return
   fi
-  git --no-pager diff --exit-code --quiet          || abort "commit or stash your changes before deploying"
-  git --no-pager diff --exit-code --quiet --cached || abort "commit your staged changes before deploying"
-  [ -z "`git rev-list @{upstream}.. -n 1`" ]       || abort "push your changes before deploying"
+  cd $path/source && git --no-pager diff --exit-code --quiet || abort "commit or stash your changes before deploying"
+  cd $path/source && git --no-pager diff --exit-code --quiet --cached || abort "commit your staged changes before deploying"
+  [ -z "`git rev-list @{upstream}.. -n 1`" ] || abort "push your changes before deploying"
 }
 
 # parse argv
