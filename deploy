@@ -209,14 +209,15 @@ setup() {
   local ref=`config_get ref`
   local fetch=`config_get fetch`
   local branch=${ref#*/}
+
   hook_pre_setup || abort pre-setup hook failed
   run "mkdir -p $path/{shared/{logs,pids},source}"
   test $? -eq 0 || abort setup paths failed
   log running setup
   log cloning $repo
-  if test fetch != "fast"; then
+  if test "$fetch" != "fast"; then
     log "full fetch"
-    run "git clone $repo $path/source"
+    run "git clone --branch $branch $repo $path/source"
   else
     log "fast fetch"
     run "git clone --depth=5 --branch $branch $repo $path/source"
@@ -234,6 +235,10 @@ setup() {
 
 deploy() {
   local ref=$1
+  local branch=$2
+  if test -z "$branch"; then
+    branch=${ref#*/}
+  fi
   local path=`config_get path`
   local fetch=`config_get fetch`
 
@@ -246,33 +251,29 @@ deploy() {
 
   hook pre-deploy || abort pre-deploy hook failed
 
-  # fetch source
-  log fetching updates
-
-  if test fetch != "fast"; then
-    log "full fetch"
-    run "cd $path/source && git fetch --all --tags"
+  if run "cd $path/source && git rev-parse --quiet --verify $branch" > /dev/null; then
+    log fast forward $branch
+    run "cd $path/source && git checkout $branch && git pull origin $branch"
+    test $? -eq 0 || abort git pull failed
   else
-    log "fast fetch"
-    run "cd $path/source && git fetch --depth=5 --all --tags"
+    # fetch source
+    log fetching updates
+
+    if test "$fetch" != "fast"; then
+      log "full fetch"
+      run "cd $path/source && git fetch --all --tags"
+    else
+      log "fast fetch"
+      run "cd $path/source && git fetch --depth=5 --all --tags"
+    fi
+
+    test $? -eq 0 || abort fetch failed
+
+    # checkout ref to branch
+    log checkout $ref to $branch
+    run "cd $path/source && git checkout $ref -b $branch"
+    test $? -eq 0 || abort git checkout failed
   fi
-
-  test $? -eq 0 || abort fetch failed
-
-  # latest tag
-  if test -z "$ref"; then
-    log fetching latest tag
-    ref=`run "cd $path/source && git for-each-ref refs/tags \
-      --sort=-*authordate \
-      --format='%(refname)' \
-      --count=1 | cut -d '/' -f 3"`
-    test $? -eq 0 || abort failed to determine latest tag
-  fi
-
-  # reset HEAD
-  log resetting HEAD to $ref
-  run "cd $path/source && git reset --hard $ref"
-  test $? -eq 0 || abort git reset failed
 
   # link current
   run "ln -sfn $path/source $path/current"
@@ -384,11 +385,11 @@ while test $# -ne 0; do
     setup)  setup $@; exit ;;
     list)  list_deploys; exit ;;
     config) config $@; exit ;;
-    ref) REF=$1 ;;
+    ref) REF=$1; BRANCH=$2 ;;
   esac
 done
 
 check_for_local_changes
 
 # deploy
-deploy "${REF:-`config_get ref`}"
+deploy "${REF:-`config_get ref`}" "${BRANCH}"
