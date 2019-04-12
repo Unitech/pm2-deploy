@@ -20,11 +20,13 @@ function spawn(hostJSON, args, cb) {
     error = e;
   });
 
+  proc.stderr.on('data', function(data){
+    error = (error || '') + data.toString();
+  });
+
   proc.on('close', function (code) {
     if (code == 0) return cb(null, args);
-    else {
-      return cb(error || code);
-    }
+    return cb(error || code);
   });
 }
 
