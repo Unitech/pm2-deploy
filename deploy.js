@@ -12,7 +12,11 @@ var path = require('path');
  * @callback cb
  */
 function spawn(hostJSON, args, cb) {
-  var shellSyntaxCommand = "echo '" + hostJSON + "' | \"" + __dirname.replace(/\\/g, '/') + "/deploy\" " + args.join(' ');
+  var shellSyntaxCommand = "echo '" + hostJSON + "' | \"" + __dirname.replace(/\\/g, '/') + "/deploy\" "
+
+  if (args.length > 0)
+    shellSyntaxCommand += '"' + args.join('" "') + '"';
+
   var proc = childProcess.spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
   var error;
 
@@ -87,6 +91,9 @@ function deployForEnv(deploy_conf, env, args, cb) {
   if (process.platform !== 'win32' && process.platform !== 'win64')
     target_conf.path = path.resolve(target_conf.path);
 
+  var originalPostDeploy = typeof target_conf['post-deploy'] === 'string'
+    ? target_conf['post-deploy']
+    : '';
   if (Array.isArray(target_conf.host)) {
     series(target_conf.host.reduce(function (jobs, host) {
       jobs.push(function (done) {
@@ -96,10 +103,12 @@ function deployForEnv(deploy_conf, env, args, cb) {
         }
 
         target_conf.host = host;
-        target_conf['post-deploy'] = 'export ' + objectToEnvVars(target_conf.env) + ' && ' + target_conf['post-deploy']
-        var custom_data = JSON.stringify(target_conf);
+        target_conf['post-deploy'] = prependEnvVars(
+          originalPostDeploy,
+          objectToEnvVars(target_conf.env)
+        );
 
-        spawn(custom_data, args, done);
+        spawn(JSON.stringify(target_conf), args, done);
       });
       return jobs;
     }, []), cb);
@@ -109,7 +118,11 @@ function deployForEnv(deploy_conf, env, args, cb) {
       console.log('--> on host %s', target_conf.host);
     }
 
-    target_conf['post-deploy'] = 'export ' + objectToEnvVars(target_conf.env) + ' && ' + target_conf['post-deploy']
+    target_conf['post-deploy'] = prependEnvVars(
+      originalPostDeploy,
+      objectToEnvVars(target_conf.env)
+    );
+
     spawn(JSON.stringify(target_conf), args, cb);
   }
 
@@ -120,6 +133,14 @@ function objectToEnvVars(obj) {
   return !obj ? '' : Object.keys(obj).map(function (key) {
     return key.toUpperCase() + '=' + obj[key];
   }).join(' ')
+}
+
+/**
+ * @param {string} cmd
+ * @param {string} envVars
+ */
+function prependEnvVars(cmd, envVars) {
+  return (envVars && 'export ' + envVars + (cmd && ' && ')) + cmd;
 }
 
 module.exports = {
