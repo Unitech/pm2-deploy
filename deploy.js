@@ -24,9 +24,11 @@ function spawn(hostJSON, args, cb) {
     error = e;
   });
 
-  proc.stderr.on('data', function(data){
-    error = (error || '') + data.toString();
-  });
+  if (proc.stderr){
+    proc.stderr.on('data', function(data){
+      error = (error || '') + data.toString();
+    });
+  }
 
   proc.on('close', function (code) {
     if (code == 0) return cb(null, args);
