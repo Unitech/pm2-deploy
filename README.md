@@ -1,7 +1,6 @@
 
 # Deploy system for PM2
 
-Documentation: [http://pm2.keymetrics.io/docs/usage/deployment/](http://pm2.keymetrics.io/docs/usage/deployment/)
+Documentation: [https://pm2.io/doc/en/runtime/guide/easy-deploy-with-ssh/](https://pm2.io/doc/en/runtime/guide/easy-deploy-with-ssh/)
 
-[![NPM version](https://badge.fury.io/js/pm2-deploy.png)](http://badge.fury.io/js/pm2)
-[![Build Status](https://api.travis-ci.org/Unitech/pm2-deploy.png?branch=master)](https://travis-ci.org/Unitech/pm2-deploy)
+[![build status](https://badgen.net/travis/Unitech/pm2/master)](https://travis-ci.org/Unitech/pm2-deploy) [![npm package version](https://badgen.net/npm/v/pm2-deploy)](https://npm.im/pm2-deploy) [![install size](https://badgen.net/packagephobia/install/pm2-deploy)](https://packagephobia.now.sh/result?p=pm2-deploy) [![github license](https://badgen.net/github/license/Unitech/pm2-deploy)](https://github.com/Unitech/pm2-deploy/blob/master/LICENSE) [![js semistandard style](https://badgen.net/badge/code%20style/semistandard/pink)](https://github.com/Flet/semistandard)
