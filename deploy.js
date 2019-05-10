@@ -114,8 +114,8 @@ function deployForEnv(deployConfig, env, args, cb) {
   }
 
   var hosts = castArray(envConfig.host);
-  var jobs = hosts.reduce(function (jobs, host) {
-    jobs.push(function (done) {
+  var jobs = hosts.map(function (host) {
+    return function job(done) {
       if (process.env.NODE_ENV !== 'test') {
         console.log('--> on host %s', host.host ? host.host : host);
       }
@@ -125,9 +125,8 @@ function deployForEnv(deployConfig, env, args, cb) {
       config['post-deploy'] = prependEnv(config['post-deploy'], config.env);
 
       spawn(config, args, done);
-    });
-    return jobs;
-  }, []);
+    };
+  });
   series(jobs, function (err, result) {
     result = Array.isArray(envConfig.host) ? result : result[0];
     cb(err, result);
