@@ -10,25 +10,12 @@ var tv4 = require('tv4');
 var schema = {
   type: 'object',
   properties: {
-    user: {
-      type: 'string',
-      minLength: 1,
-    },
-    host: {
-      type: ['string', 'array'],
-    },
-    repo: {
-      type: 'string',
-    },
-    path: {
-      type: 'string',
-    },
-    ref: {
-      type: 'string',
-    },
-    fetch: {
-      type: 'string',
-    },
+    user: { type: 'string', minLength: 1 },
+    host: { type: ['string', 'array'] },
+    repo: { type: 'string' },
+    path: { type: 'string' },
+    ref: { type: 'string' },
+    fetch: { type: 'string' },
   },
   required: ['host', 'repo', 'path', 'ref'],
 };
