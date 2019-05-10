@@ -34,16 +34,10 @@ var schema = {
 };
 
 /**
- * @callback DeployCallback
- * @param {Error} error deployment error
- * @param {array} args custom command-line arguments provided to deploy
- */
-
-/**
  * Spawn a modified version of visionmedia/deploy
  * @private
  * @param {object} config config to be piped to deploy
- * @param {array}  [args] custom deploy command-line arguments
+ * @param {array}  args custom deploy command-line arguments
  * @param {DeployCallback} cb done callback
  */
 function spawn(config, args, cb) {
@@ -84,9 +78,9 @@ function castArray(arg) {
  * Deploy to a single environment
  * @param {object} deployConfig object containing deploy configs for all environments
  * @param {string} env the name of the environment to deploy to
- * @param {array} [args] custom deploy command-line arguments
+ * @param {array} args custom deploy command-line arguments
  * @param {DeployCallback} cb done callback
- * @returns {boolean} always returns false
+ * @returns {boolean} return value is always `false`
  */
 function deployForEnv(deployConfig, env, args, cb) {
   if (!deployConfig[env]) {
@@ -160,3 +154,9 @@ function prependEnv(cmd, env) {
 module.exports = {
   deployForEnv: deployForEnv,
 };
+
+/**
+* @callback DeployCallback
+* @param {Error} error deployment error
+* @param {array} args custom command-line arguments provided to deploy
+*/
