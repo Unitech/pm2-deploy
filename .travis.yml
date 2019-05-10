@@ -1,11 +1,15 @@
 language: node_js
 node_js:
-  - '4'
   - '6'
   - '8'
   - 'lts/*'
   - 'node'
 
+matrix:
+  include:
+    - node_js: '4'
+      env: NO_LINT=true
+
 script:
-  - npm run lint
+  - if [[ -z "${NO_LINT}" ]]; then npm run lint; fi
   - npm test
