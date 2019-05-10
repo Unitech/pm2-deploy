@@ -41,6 +41,7 @@ var schema = {
 
 /**
  * Spawn a modified version of visionmedia/deploy
+ * @private
  * @param {object} config config to be piped to deploy
  * @param {array}  [args] custom deploy command-line arguments
  * @param {DeployCallback} cb done callback
@@ -144,6 +145,7 @@ function envToString(env) {
 
 /**
  * Prepend command with environment variables
+ * @private
  * @param {string} cmd command
  * @param {object} env object containing environment variables
  * @returns {string} concatenated shell command
