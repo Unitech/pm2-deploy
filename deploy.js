@@ -1,148 +1,149 @@
-var fs = require('fs');
-var tv4 = require('tv4');
-var series = require('async/series');
-var childProcess = require('child_process');
+'use strict';
+
+// eslint-disable-next-line camelcase
+var child_process = require('child_process');
+var format = require('util').format;
 var path = require('path');
+var series = require('run-series');
+var tv4 = require('tv4');
+
+var schema = {
+  type: 'object',
+  properties: {
+    user: { type: 'string', minLength: 1 },
+    host: { type: ['string', 'array'] },
+    repo: { type: 'string' },
+    path: { type: 'string' },
+    ref: { type: 'string' },
+    fetch: { type: 'string' },
+  },
+  required: ['host', 'repo', 'path', 'ref'],
+};
 
 /**
  * Spawn a modified version of visionmedia/deploy
- *
- * @param {string} hostJSON: config string to be piped to deploy
- * @param {array}  args: custom deploy command-line arguments
- * @callback cb
+ * @private
+ * @param {object} config config to be piped to deploy
+ * @param {array}  args custom deploy command-line arguments
+ * @param {DeployCallback} cb done callback
  */
-function spawn(hostJSON, args, cb) {
-  var shellSyntaxCommand = "echo '" + hostJSON + "' | \"" + __dirname.replace(/\\/g, '/') + "/deploy\" "
+function spawn(config, args, cb) {
+  var cmd = format('echo \'%j\' | "%s"', config, require.resolve('./deploy'));
 
-  if (args.length > 0)
-    shellSyntaxCommand += '"' + args.join('" "') + '"';
+  args = args || [];
+  if (args.length > 0) {
+    var cmdArgs = args.map(function (arg) {
+      return format('"%s"', arg);
+    }).join(' ');
+    cmd = [cmd, cmdArgs].join(' ');
+  }
 
-  var proc = childProcess.spawn('sh', ['-c', shellSyntaxCommand], { stdio: 'inherit' });
+  var proc = child_process.spawn('sh', ['-c', cmd], { stdio: 'inherit' });
   var error;
 
-  proc.on('error', function (e) {
-    error = e;
+  proc.on('error', function (err) {
+    error = err;
   });
 
   proc.on('close', function (code) {
-    if (code == 0) return cb(null, args);
-    else {
-      return cb(error || code);
-    }
+    if (code === 0) return cb(null, args);
+    error = error || new Error(format('Deploy failed with exit code: %s', code));
+    error.code = code;
+    return cb(error);
   });
+}
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function castArray(arg) {
+  return Array.isArray(arg) ? arg : [arg];
 }
 
 /**
  * Deploy to a single environment
- *
- * @param {object} deploy_conf: object containing deploy configs for all environments
- * @param {string} env: the name of the environment to deploy to
- * @param {array}  args: custom deploy command-line arguments
- * @callback cb
+ * @param {object} deployConfig object containing deploy configs for all environments
+ * @param {string} env the name of the environment to deploy to
+ * @param {array} args custom deploy command-line arguments
+ * @param {DeployCallback} cb done callback
+ * @returns {boolean} return value is always `false`
  */
-function deployForEnv(deploy_conf, env, args, cb) {
-  if (!deploy_conf[env]) return cb(env + ' not defined in deploy section');
-
-  var piped_data = JSON.stringify(deploy_conf[env]);
-  var target_conf = JSON.parse(piped_data); //effectively clones the conf
-
-  if (target_conf.ssh_options) {
-    var ssh_opt = '';
-    if (Array.isArray(target_conf.ssh_options)) {
-      ssh_opt = '-o ' + target_conf.ssh_options.join(' -o ');
-    } else {
-      ssh_opt = '-o ' + target_conf.ssh_options;
-    }
-    target_conf.ssh_options = ssh_opt;
+function deployForEnv(deployConfig, env, args, cb) {
+  if (!deployConfig[env]) {
+    return cb(new Error(format('%s not defined in deploy section', env)));
   }
 
-  if (!tv4.validate(target_conf, {
-    type: 'object',
-    properties: {
-      user: {
-        type: 'string',
-        minLength: 1,
-      },
-      host: {
-        type: ['string', 'array'],
-      },
-      repo: {
-        type: 'string',
-      },
-      path: {
-        type: 'string',
-      },
-      ref: {
-        type: 'string',
-      },
-      fetch: {
-        type: 'string',
-      },
-    },
-    required: ["host", "repo", "path", "ref"],
-  })) {
-    return cb(tv4.error);
+  var envConfig = clone(deployConfig[env]);
+
+  if (envConfig.ssh_options) {
+    envConfig.ssh_options = castArray(envConfig.ssh_options).map(function (option) {
+      return format('-o %s', option);
+    }).join(' ');
+  }
+
+  var result = tv4.validateResult(envConfig, schema);
+  if (!result.valid) {
+    return cb(result.error);
   }
 
   if (process.env.NODE_ENV !== 'test') {
     console.log('--> Deploying to %s environment', env);
   }
 
-  if (process.platform !== 'win32' && process.platform !== 'win64')
-    target_conf.path = path.resolve(target_conf.path);
-
-  var originalPostDeploy = typeof target_conf['post-deploy'] === 'string'
-    ? target_conf['post-deploy']
-    : '';
-  if (Array.isArray(target_conf.host)) {
-    series(target_conf.host.reduce(function (jobs, host) {
-      jobs.push(function (done) {
-
-        if (process.env.NODE_ENV !== 'test') {
-          console.log('--> on host %s', host.host ? host.host : host);
-        }
-
-        target_conf.host = host;
-        target_conf['post-deploy'] = prependEnvVars(
-          originalPostDeploy,
-          objectToEnvVars(target_conf.env)
-        );
-
-        spawn(JSON.stringify(target_conf), args, done);
-      });
-      return jobs;
-    }, []), cb);
+  if (process.platform !== 'win32') {
+    envConfig.path = path.resolve(envConfig.path);
   }
-  else {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('--> on host %s', target_conf.host);
-    }
 
-    target_conf['post-deploy'] = prependEnvVars(
-      originalPostDeploy,
-      objectToEnvVars(target_conf.env)
-    );
+  var hosts = castArray(envConfig.host);
+  var jobs = hosts.map(function (host) {
+    return function job(done) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('--> on host %s', host.host ? host.host : host);
+      }
 
-    spawn(JSON.stringify(target_conf), args, cb);
-  }
+      var config = clone(envConfig);
+      config.host = host;
+      config['post-deploy'] = prependEnv(config['post-deploy'], config.env);
+
+      spawn(config, args, done);
+    };
+  });
+  series(jobs, function (err, result) {
+    result = Array.isArray(envConfig.host) ? result : result[0];
+    cb(err, result);
+  });
 
   return false;
 }
 
-function objectToEnvVars(obj) {
-  return !obj ? '' : Object.keys(obj).map(function (key) {
-    return key.toUpperCase() + '=' + obj[key];
-  }).join(' ')
+function envToString(env) {
+  env = env || {};
+  return Object.keys(env).map(function (name) {
+    return format('%s=%s', name.toUpperCase(), env[name]);
+  }).join(' ');
 }
 
 /**
- * @param {string} cmd
- * @param {string} envVars
+ * Prepend command with environment variables
+ * @private
+ * @param {string} cmd command
+ * @param {object} env object containing environment variables
+ * @returns {string} concatenated shell command
  */
-function prependEnvVars(cmd, envVars) {
-  return (envVars && 'export ' + envVars + (cmd && ' && ')) + cmd;
+function prependEnv(cmd, env) {
+  const envVars = envToString(env);
+  if (!envVars) return cmd;
+  if (!cmd) return format('export %s', envVars);
+  return format('export %s && %s', envVars, cmd);
 }
 
 module.exports = {
-  deployForEnv: deployForEnv
+  deployForEnv: deployForEnv,
 };
+
+/**
+* @callback DeployCallback
+* @param {Error} error deployment error
+* @param {array} args custom command-line arguments provided to deploy
+*/
