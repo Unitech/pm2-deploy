@@ -15,7 +15,7 @@
     "url": "https://github.com/Unitech/pm2-deploy.git"
   },
   "scripts": {
-    "lint": "eslint \"**/*.js\"",
+    "lint": "eslint .",
     "test": "mocha",
     "docs": "documentation readme ./deploy.js --section=API"
   },
