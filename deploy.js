@@ -7,8 +7,6 @@ var path = require('path');
 var series = require('run-series');
 var tv4 = require('tv4');
 
-var noop = Function.prototype;
-
 var schema = {
   type: 'object',
   properties: {
@@ -87,7 +85,12 @@ function deployForEnv(deployConfig, env, args, options, cb) {
   options.logging = options.hasOwnProperty('logging') ? options.logging : console.log;
   if (options.logging === true) options.logging = console.log;
 
-  var log = isFunction(options.logging) ? options.logging : noop;
+  function log() {
+    if (!isFunction(options.logging)) return;
+    var args = arguments.slice(0);
+    if (options.logging === console.log) args.shift();
+    return options.logging.apply(options, args);
+  }
 
   if (!deployConfig[env]) {
     return cb(new Error(format('%s not defined in deploy section', env)));
@@ -118,12 +121,12 @@ function deployForEnv(deployConfig, env, args, options, cb) {
       config.host = host;
       config['post-deploy'] = prependEnv(config['post-deploy'], config.env);
 
-      log(format('--> on host %s', host));
+      log({ host: host }, format('--> on host %s', host));
       spawn(config, args, done);
     };
   });
 
-  log(format('--> Deploying to %s environment', env));
+  log({ env: env }, format('--> Deploying to %s environment', env));
   series(jobs, function (err, result) {
     if (!Array.isArray(envConfig.host)) result = result && result[0];
     cb(err, result);
