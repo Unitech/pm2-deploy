@@ -260,9 +260,9 @@ deploy() {
 
   hook pre-deploy || abort pre-deploy hook failed
 
-  if run "cd $path/source && git rev-parse --quiet --verify $ref" > /dev/null; then
-    log fast forward $ref
-    run "cd $path/source && git checkout $ref && git pull origin $ref --rebase"
+  if run "cd $path/source && git cat-file -t $branch" > /dev/null; then
+    log fast forward $branch
+    run "cd $path/source && git merge $ref && git checkout $branch"
     test $? -eq 0 || abort git pull failed
   else
     # fetch source
@@ -280,11 +280,7 @@ deploy() {
 
     # checkout ref to branch
     log checkout $ref to $branch
-    if git show-ref -q --verify "refs/tags/$ref" 2>/dev/null; then
-    	run "cd $path/source && git checkout $ref -b $branch"
-    else
-    	run "cd $path/source && git checkout $ref"
-    fi
+    run "cd $path/source && git checkout $ref -b $branch"
     test $? -eq 0 || abort git checkout failed
   fi
 
