@@ -10,7 +10,6 @@
 VERSION="0.6.0"
 CONFIG=./deploy.conf
 LOG=/tmp/pm2-deploy-${USER:-default}.log
-TEST=1
 FORCE=0
 REF=
 ENV=
@@ -33,7 +32,6 @@ usage() {
 
     -C, --chdir <path>   change the working directory to <path>
     -c, --config <path>  set config path. defaults to ./deploy.conf
-    -T, --no-tests       ignore test hook
     -V, --version        output program version
     -h, --help           output help information
     -f, --force          skip local change checking
@@ -236,6 +234,7 @@ setup() {
 deploy() {
   local ref=$1
   local branch=$2
+
   if test -z "$branch"; then
     branch=${ref#*/}
   fi
@@ -244,58 +243,51 @@ deploy() {
 
   log "deploying ${ref}"
 
-  # PR #50
+  # 1- Execute local commands
   log executing pre-deploy-local
   local pdl=`config_get pre-deploy-local`
   runLocal $pdl || abort pre-deploy-local hook failed
 
+  # 2- Execute pre deploy commands on remote server
   hook pre-deploy || abort pre-deploy hook failed
 
-  if run "cd $path/source && git cat-file -t $branch" > /dev/null; then
-    log fast forward $branch
-    run "cd $path/source && git checkout $branch && git pull origin $branch"
-    test $? -eq 0 || abort git pull failed
-  else
-    # fetch source
-    log fetching updates
-
-    if test "$fetch" != "fast"; then
+  # 3- Fetch updates
+  log fetching updates
+  if test "$fetch" != "fast"; then
       log "full fetch"
       run "cd $path/source && git fetch --all --tags"
-    else
+  else
       log "fast fetch"
       run "cd $path/source && git fetch --depth=5 --all --tags"
-    fi
+  fi
+  test $? -eq 0 || abort fetch failed
 
-    test $? -eq 0 || abort fetch failed
-
-    # checkout ref to branch
-    log checkout $ref to $branch
-    run "cd $path/source && git checkout $ref -b $branch"
-    test $? -eq 0 || abort git checkout failed
+  # 4- If no reference retrieve shorthand name for the remote repo
+  if test -z "$ref"; then
+    log fetching latest tag
+    ref=`run "cd $path/source && git for-each-ref \
+      --sort=-*authordate \
+      --format='%(refname)' \
+      --count=1 | cut -d '/' -f 3"`
+    test $? -eq 0 || abort failed to determine latest tag
   fi
 
-  # link current
+  # 5- Reset to ref
+  log resetting HEAD to $ref
+  run "cd $path/source && git reset --hard $ref"
+  test $? -eq 0 || abort git reset failed
+
+  # 6- Link current
   run "ln -sfn $path/source $path/current"
   test $? -eq 0 || abort symlink failed
 
   # deploy log
   run "cd $path/source && \
-      echo \`git rev-parse --short HEAD\` \
+      echo \`git rev-parse HEAD\` \
       >> $path/.deploys"
   test $? -eq 0 || abort deploy log append failed
 
   hook post-deploy || abort post-deploy hook failed
-
-  if test $TEST -eq 1; then
-    hook test
-    if test $? -ne 0; then
-      log tests failed, reverting deploy
-      quickly_revert_to 1 && log "revert complete" && exit
-    fi
-  else
-    log ignoring tests
-  fi
 
   # done
   log successfully deployed $ref
@@ -328,17 +320,6 @@ nth_deploy_commit() {
 list_deploys() {
   local path=`config_get path`
   run "tac $path/.deploys | awk '{printf \"%d\t%s\n\", NR-1, \$0}'"
-}
-
-#
-# Revert to the <n>th last deployment, ignoring tests.
-#
-
-quickly_revert_to() {
-  local n=$1
-  log "quickly reverting $n deploy(s)"
-  local commit=`nth_deploy_commit $((n + 1))`
-  TEST=0 deploy "$commit"
 }
 
 #
@@ -375,7 +356,6 @@ while test $# -ne 0; do
     -h|--help) usage; exit ;;
     -V|--version) version; exit ;;
     -C|--chdir) log cd $1; cd $1; shift ;;
-    -T|--no-tests) TEST=0 ;;
     -F|--force) FORCE=1 ;;
     run|exec)  run "cd `config_get path`/current && $@"; exit ;;
     console)  console; exit ;;
@@ -391,5 +371,6 @@ done
 
 check_for_local_changes
 
+echo
 # deploy
 deploy "${REF:-`config_get ref`}" "${BRANCH}"
