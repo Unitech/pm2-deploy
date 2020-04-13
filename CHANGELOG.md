@@ -1,26 +1,21 @@
 
-# 0.3.6
+# 1.0.1
 
-- ability to omit user in deploy_conf
+- [deploy and revert fixes](https://github.com/Unitech/pm2-deploy/pull/174) @t0lkman
+- [Update deploy to allow multiple deployments with different Users](https://github.com/Unitech/pm2-deploy/pull/187) @RealKelsar
+- [fix git ref verify](https://github.com/Unitech/pm2-deploy/pull/175)
 
-# 0.3.2
 
-- #103 ability to run a script even before cloning the repository
-- #98 (windows) remove resolving of remote path in local
+# 1.0.0
 
-# 0.3.0
+by @vladimyr
 
-- [#91] fix: Fixed a bug if package path contains spaces
-- [#81] fix: tilde expansion of key
-- [#87] fix: fix Broken relative path handling causes "deploy log append failed"
-- [#79] feature: added pre-setup and post-setup hooks
-- [#92] feature: fetch all tags from the remote
-- [#32] feature: deploy [json] [environ] list -- show each commit with prefix of revert n
-- [#89] feature: allow to pass ssh options
-
-# 0.1.3
-
-- Add ref option to support pulling remote refs  #60
-- fix npm install warning #51
-- pre-deploy-local allowed
-- windows fix
+- linting codebase using ESLint (semistandard)
+- simplifying internal logic
+- upgrading dependencies to last suitable versions
+- swapping async with run-series to decrease installation size
+- controlling published files using package.json files field
+- updating readme with new documentation site & badges
+- updating travis test matrix to include latest & current lts version
+- preventing package-lock.json creation
+- adding .editorconfig
