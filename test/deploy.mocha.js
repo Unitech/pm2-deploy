@@ -29,9 +29,10 @@ describe('deploy', function () {
       return proc;
     };
 
-    var conf;
+    var config;
+    var options;
     beforeEach(function () {
-      conf = {
+      config = {
         staging: {
           user: 'user',
           host: 'host',
@@ -41,21 +42,22 @@ describe('deploy', function () {
           'post-deploy': 'post-deploy',
         },
       };
+      options = { logging: false };
     });
 
     it('is a function', function () {
       deploy.deployForEnv.should.be.a.Function();
     });
 
-    it('returns false()', function () {
-      var ret = deploy.deployForEnv(conf, 'staging', [], function () {});
+    it('returns `false`', function () {
+      var ret = deploy.deployForEnv(config, 'staging', [], options, function () {});
       ret.should.be.false();
     });
 
     describe('deploy_conf validation', function () {
       it('validate user', function (done) {
-        conf.staging.user = '';
-        deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+        config.staging.user = '';
+        deploy.deployForEnv(config, 'staging', [], options, function (err) {
           err.should.be.an.Error();
           err.code.should.equal(200);
           err.message.should.match('String is too short (0 chars), minimum 1');
@@ -64,8 +66,8 @@ describe('deploy', function () {
       });
 
       it('requires host', function (done) {
-        delete conf.staging.host;
-        deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+        delete config.staging.host;
+        deploy.deployForEnv(config, 'staging', [], options, function (err) {
           err.should.be.an.Error();
           err.code.should.equal(302);
           err.message.should.match('Missing required property: host');
@@ -74,8 +76,8 @@ describe('deploy', function () {
       });
 
       it('requires repo', function (done) {
-        delete conf.staging.repo;
-        deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+        delete config.staging.repo;
+        deploy.deployForEnv(config, 'staging', [], options, function (err) {
           err.should.be.an.Error();
           err.code.should.equal(302);
           err.message.should.match('Missing required property: repo');
@@ -84,8 +86,8 @@ describe('deploy', function () {
       });
 
       it('requires path', function (done) {
-        delete conf.staging.path;
-        deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+        delete config.staging.path;
+        deploy.deployForEnv(config, 'staging', [], options, function (err) {
           err.should.be.an.Error();
           err.code.should.equal(302);
           err.message.should.match('Missing required property: path');
@@ -94,8 +96,8 @@ describe('deploy', function () {
       });
 
       it('requires ref', function (done) {
-        delete conf.staging.ref;
-        deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+        delete config.staging.ref;
+        deploy.deployForEnv(config, 'staging', [], options, function (err) {
           err.should.be.an.Error();
           err.code.should.equal(302);
           err.message.should.match('Missing required property: ref');
@@ -111,17 +113,17 @@ describe('deploy', function () {
           spawnNotifier.on('spawned', function (proc) {
             proc.emit('close', 0);
           });
-          deploy.deployForEnv(conf, 'staging', argsIn, function (err, argsOut) {
+          deploy.deployForEnv(config, 'staging', argsIn, options, function (err, argsOut) {
             argsOut.should.eql(argsIn);
             done(err);
           });
         });
 
-        it('invokes sh -c', function (done) {
+        it('invokes `sh -c`', function (done) {
           spawnNotifier.on('spawned', function (proc) {
             proc.emit('close', 0);
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             spawnCalls.length.should.equal(1);
             spawnCalls[0][0].should.equal('sh');
             spawnCalls[0][1].should.be.an.Array();
@@ -134,7 +136,7 @@ describe('deploy', function () {
           spawnNotifier.on('spawned', function (proc) {
             proc.emit('close', 0);
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             spawnCalls.length.should.equal(1);
             spawnCalls[0][1][1].should.be.a.String();
 
@@ -146,24 +148,24 @@ describe('deploy', function () {
 
             var echoData = JSON.parse(echoJSON);
             echoData.should.be.an.Object();
-            echoData.ref.should.eql(conf.staging.ref);
-            echoData.user.should.eql(conf.staging.user);
-            echoData.repo.should.eql(conf.staging.repo);
-            echoData.path.should.eql(path.resolve(conf.staging.path));
-            echoData.host.should.eql(conf.staging.host);
-            echoData['post-deploy'].should.eql(conf.staging['post-deploy']);
+            echoData.ref.should.eql(config.staging.ref);
+            echoData.user.should.eql(config.staging.user);
+            echoData.repo.should.eql(config.staging.repo);
+            echoData.path.should.eql(path.resolve(config.staging.path));
+            echoData.host.should.eql(config.staging.host);
+            echoData['post-deploy'].should.eql(config.staging['post-deploy']);
 
-            conf.staging.env = { a: 1, b: 2 };
-            deploy.deployForEnv(conf, 'staging', [], function () {
+            config.staging.env = { a: 1, b: 2 };
+            deploy.deployForEnv(config, 'staging', [], options, function () {
               spawnCalls.length.should.equal(2);
               spawnCalls[1][1][1].should.be.a.String();
               echoData = JSON.parse(spawnCalls[1][1][1].match(/^echo '(.+?)'/)[1]);
               echoData['post-deploy'].should.eql(
-                format('export A=1 B=2 && %s', conf.staging['post-deploy'])
+                format('export A=1 B=2 && %s', config.staging['post-deploy'])
               );
 
-              conf.staging['post-deploy'] = '';
-              deploy.deployForEnv(conf, 'staging', [], function () {
+              config.staging['post-deploy'] = '';
+              deploy.deployForEnv(config, 'staging', [], options, function () {
                 spawnCalls.length.should.equal(3);
                 spawnCalls[2][1][1].should.be.a.String();
                 echoData = JSON.parse(spawnCalls[2][1][1].match(/^echo '(.+?)'/)[1]);
@@ -178,7 +180,7 @@ describe('deploy', function () {
           spawnNotifier.on('spawned', function (proc) {
             proc.emit('close', 0);
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             spawnCalls.length.should.equal(1);
             spawnCalls[0][1][1].should.be.a.String();
             var pipeTo = spawnCalls[0][1][1].split(/\s*\|\s*/)[1];
@@ -196,7 +198,7 @@ describe('deploy', function () {
             proc.emit('error', error);
             proc.emit('close', 1);
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             err.should.be.an.Error();
             err.stack.should.eql(error.stack);
             done();
@@ -210,7 +212,7 @@ describe('deploy', function () {
             proc.emit('error', error);
             proc.emit('close', 1);
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             err.should.be.an.Error();
             err.code.should.eql(error.code);
             done();
@@ -222,7 +224,7 @@ describe('deploy', function () {
         var hosts = ['1.1.1.1', '2.2.2.2', '3.3.3.3', '4.4.4.4'];
 
         beforeEach(function () {
-          conf.staging.host = hosts;
+          config.staging.host = hosts;
         });
 
         it('runs each host in series', function (done) {
@@ -235,7 +237,7 @@ describe('deploy', function () {
               spawnCount -= 1;
             });
           });
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             done(err);
           });
         });
@@ -253,11 +255,11 @@ describe('deploy', function () {
             var echoData = JSON.parse(echoJSON);
             echoData.should.be.an.Object();
 
-            echoData.ref.should.eql(conf.staging.ref);
-            echoData.repo.should.eql(conf.staging.repo);
-            echoData.path.should.eql(path.resolve(conf.staging.path));
+            echoData.ref.should.eql(config.staging.ref);
+            echoData.repo.should.eql(config.staging.repo);
+            echoData.path.should.eql(path.resolve(config.staging.path));
             echoData.host.should.eql(hosts[spawnCount]);
-            echoData['post-deploy'].should.eql(conf.staging['post-deploy']);
+            echoData['post-deploy'].should.eql(config.staging['post-deploy']);
 
             spawnCount += 1;
 
@@ -266,7 +268,7 @@ describe('deploy', function () {
             });
           });
 
-          deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+          deploy.deployForEnv(config, 'staging', [], options, function (err) {
             spawnCount.should.eql(4);
             done(err);
           });
@@ -285,12 +287,12 @@ describe('deploy', function () {
             var echoData = JSON.parse(echoJSON);
             echoData.should.be.an.Object();
 
-            echoData.ref.should.eql(conf.staging.ref);
-            echoData.repo.should.eql(conf.staging.repo);
-            echoData.path.should.eql(path.resolve(conf.staging.path));
+            echoData.ref.should.eql(config.staging.ref);
+            echoData.repo.should.eql(config.staging.repo);
+            echoData.path.should.eql(path.resolve(config.staging.path));
             echoData.host.should.eql(hosts[spawnCount]);
             echoData['post-deploy'].should.eql(
-              format('export A=1 B=2 && %s', conf.staging['post-deploy'])
+              format('export A=1 B=2 && %s', config.staging['post-deploy'])
             );
 
             spawnCount += 1;
@@ -300,8 +302,8 @@ describe('deploy', function () {
             });
           });
 
-          Object.assign(conf.staging, { env: { a: 1, b: 2 } });
-          deploy.deployForEnv(conf, 'staging', [], function () {
+          Object.assign(config.staging, { env: { a: 1, b: 2 } });
+          deploy.deployForEnv(config, 'staging', [], options, function () {
             spawnCount.should.eql(4);
             done();
           });
@@ -313,7 +315,7 @@ describe('deploy', function () {
             proc.emit('close', 0);
           });
 
-          deploy.deployForEnv(conf, 'staging', argsIn, function (err, argsOut) {
+          deploy.deployForEnv(config, 'staging', argsIn, options, function (err, argsOut) {
             argsOut.should.be.an.Array();
             argsOut.length.should.eql(4);
             argsOut[0].should.eql(argsIn);
@@ -332,7 +334,7 @@ describe('deploy', function () {
               proc.emit('error', error);
               proc.emit('close', 1);
             });
-            deploy.deployForEnv(conf, 'staging', [], function (err, args) {
+            deploy.deployForEnv(config, 'staging', [], options, function (err) {
               err.should.be.an.Error();
               err.code.should.eql(error.code);
               spawnCalls.length.should.eql(1);

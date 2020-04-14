@@ -32,10 +32,10 @@ function spawn(config, args, cb) {
 
   args = args || [];
   if (args.length > 0) {
-    var cmdArgs = args.map(function (arg) {
-      return format('"%s"', arg);
-    }).join(' ');
-    cmd = [cmd, cmdArgs].join(' ');
+    cmd = args.reduce(function (acc, arg) {
+      acc += format(' "%s"', arg);
+      return acc;
+    }, cmd).trim();
   }
 
   var proc = child_process.spawn('sh', ['-c', cmd], { stdio: 'inherit' });
@@ -53,6 +53,10 @@ function spawn(config, args, cb) {
   });
 }
 
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -66,29 +70,44 @@ function castArray(arg) {
  * @param {object} deployConfig object containing deploy configs for all environments
  * @param {string} env the name of the environment to deploy to
  * @param {array} args custom deploy command-line arguments
+ * @param {object} [options={}] deploy options
+ * @param {boolean|function} [options.logging=console.log] logging function or `false` to disable logging
  * @param {DeployCallback} cb done callback
  * @returns {boolean} return value is always `false`
  */
-function deployForEnv(deployConfig, env, args, cb) {
+function deployForEnv(deployConfig, env, args, options, cb) {
+  if (isFunction(options)) {
+    cb = options;
+    options = {};
+  }
+
+  options = options || {};
+  options.logging = options.hasOwnProperty('logging') ? options.logging : console.log;
+  if (options.logging === true) options.logging = console.log;
+
+  function log() {
+    if (!isFunction(options.logging)) return;
+    var args = arguments.slice(0);
+    if (options.logging === console.log) args.shift();
+    return options.logging.apply(options, args);
+  }
+
   if (!deployConfig[env]) {
     return cb(new Error(format('%s not defined in deploy section', env)));
   }
 
   var envConfig = clone(deployConfig[env]);
-
-  if (envConfig.ssh_options) {
-    envConfig.ssh_options = castArray(envConfig.ssh_options).map(function (option) {
-      return format('-o %s', option);
-    }).join(' ');
-  }
-
   var result = tv4.validateResult(envConfig, schema);
   if (!result.valid) {
     return cb(result.error);
   }
 
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('--> Deploying to %s environment', env);
+  if (envConfig.ssh_options) {
+    envConfig.ssh_options = castArray(envConfig.ssh_options)
+      .reduce(function (acc, option) {
+        acc += format(' -o %s', option);
+        return acc;
+      }, '').trim();
   }
 
   if (process.platform !== 'win32') {
@@ -98,19 +117,18 @@ function deployForEnv(deployConfig, env, args, cb) {
   var hosts = castArray(envConfig.host);
   var jobs = hosts.map(function (host) {
     return function job(done) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('--> on host %s', host.host ? host.host : host);
-      }
-
       var config = clone(envConfig);
       config.host = host;
       config['post-deploy'] = prependEnv(config['post-deploy'], config.env);
 
+      log({ host: host }, format('--> on host %s', host));
       spawn(config, args, done);
     };
   });
+
+  log({ env: env }, format('--> Deploying to %s environment', env));
   series(jobs, function (err, result) {
-    result = Array.isArray(envConfig.host) ? result : result[0];
+    if (!Array.isArray(envConfig.host)) result = result && result[0];
     cb(err, result);
   });
 
@@ -119,9 +137,11 @@ function deployForEnv(deployConfig, env, args, cb) {
 
 function envToString(env) {
   env = env || {};
-  return Object.keys(env).map(function (name) {
-    return format('%s=%s', name.toUpperCase(), env[name]);
-  }).join(' ');
+  return Object.keys(env)
+    .reduce(function (acc, name) {
+      acc += format(' %s=%s', name.toUpperCase(), env[name]);
+      return acc;
+    }, '').trim();
 }
 
 /**

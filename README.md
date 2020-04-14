@@ -71,6 +71,8 @@ Deploy to a single environment
 -   `deployConfig` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** object containing deploy configs for all environments
 -   `env` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the name of the environment to deploy to
 -   `args` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)** custom deploy command-line arguments
+-   `options` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** deploy options (optional, default `{}`)
+    -   `options.logging` **([boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean) \| [function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function))** logging function or `false` to disable logging (optional, default `console.log`)
 -   `cb` **[DeployCallback](#deploycallback)** done callback
 
 Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** return value is always `false`
