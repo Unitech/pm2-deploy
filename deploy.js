@@ -118,7 +118,6 @@ function deployForEnv(deployConfig, env, args, cb) {
 }
 
 function envToString(env) {
-  env = env || {};
   return Object.keys(env).map(function (name) {
     return format('%s=%s', name.toUpperCase(), env[name]);
   }).join(' ');
@@ -132,7 +131,14 @@ function envToString(env) {
  * @returns {string} concatenated shell command
  */
 function prependEnv(cmd, env) {
-  const envVars = envToString(env);
+  env = env || {};
+  const envAndPm2EnvVars = Object.keys(process.env)
+    .filter((key) => key.startsWith("PM2_"))
+    .reduce(
+      (obj, key) => Object.assign(obj, { [key.slice(4)]: process.env[key] }),
+      env
+    );
+  const envVars = envToString(envAndPm2EnvVars);
   if (!envVars) return cmd;
   if (!cmd) return format('export %s', envVars);
   return format('export %s && %s', envVars, cmd);
